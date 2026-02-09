@@ -29,6 +29,23 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.backend.database import Base
 
 
+class TimestampMixin:
+    """Mixin to add created_at and updated_at timestamps to models."""
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
 class AuditEventType(str, enum.Enum):
     """All auditable authentication and authorization events."""
     
