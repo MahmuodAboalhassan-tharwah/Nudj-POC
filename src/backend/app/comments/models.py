@@ -27,6 +27,6 @@ class Comment(Base, TimestampMixin):
         "Comment",
         back_populates="replies",
         remote_side=[id],
-        use_list=False
+        uselist=False
     )
     response: Mapped["AssessmentElementResponse"] = relationship("AssessmentElementResponse", back_populates="comments")

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database import get_db
 from src.backend.app.auth.dependencies import get_current_user
-from src.backend.app.auth.models import User, UserRole
+from src.backend.app.auth.models import User, Role
 from src.backend.app.framework.schemas import FrameworkDomainConfigResponse, FrameworkDomainConfigUpdate
 from src.backend.app.framework.service import FrameworkService
 
@@ -30,7 +30,7 @@ async def update_domain_weight(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role != UserRole.SUPER_ADMIN:
+    if current_user.role != Role.SUPER_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Only Super Admins can modify framework configuration"

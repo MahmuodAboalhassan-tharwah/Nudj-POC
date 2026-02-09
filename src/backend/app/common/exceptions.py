@@ -57,6 +57,10 @@ class NudjException(Exception):
         return result
 
 
+# Alias for backward compatibility
+AppException = NudjException
+
+
 # =============================================================================
 # HTTP Exceptions
 # =============================================================================

@@ -1,18 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pip install:*)",
-      "Bash(dir \"c:\\\\Users\\\\mahmu\\\\.claude\"\" /s 2>&1 || echo \"Directory not found or inaccessible \")",
-      "Bash(dir:*)",
-      "Read(//c/Users/mahmu/**)",
-      "Bash(findstr:*)",
-      "Bash(cmd /c dir:*)",
-      "Bash(powershell -Command:*)",
-      "Bash(npm install:*)",
-      "Bash(npx shadcn@latest add:*)",
-      "Bash(ls -la \"C:\\\\Users\\\\mahmu\\\\PycharmProjects\\\\Tharwty-projects\\\\POC\\\\pipeline\"\" 2>/dev/null || echo \"Directory does not exist \")",
-      "Bash(ls:*)",
-      "Bash(npm run build:*)"
-    ]
+      "Bash(Select-Object Id, ProcessName, StartTime)",
+      "Bash(set PYTHONPATH=c:WorkPoCsNudj-POC)",
+      "Bash(py -c \"from src.backend.main import app; print(''App imported successfully'')\")",
+      "Bash(py c:WorkPoCsNudj-POCtest_imports.py)",
+      "Bash(py test_imports.py)",
+      "Bash($env:PYTHONPATH=\"c:\\Work\\PoCs\\Nudj-POC\")",
+      "Bash($env:DEBUG=\"true\")",
+      "Bash(py:*)",
+      "Bash(curl:*)",
+      "Bash(test:*)",
+      "Bash(npm install)"
+    ],
+    "deny": [],
+    "ask": []
   }
 }

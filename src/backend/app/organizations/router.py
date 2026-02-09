@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database import get_db
-from src.backend.app.auth.services import get_current_user
+from src.backend.app.auth.dependencies import get_current_user
 from src.backend.app.auth.models import User, Role
 from src.backend.app.organizations.schemas import OrganizationCreate, OrganizationResponse, OrganizationUpdate
 from src.backend.app.organizations.service import OrganizationService
