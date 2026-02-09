@@ -1,17 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Select-Object Id, ProcessName, StartTime)",
-      "Bash(set PYTHONPATH=c:WorkPoCsNudj-POC)",
-      "Bash(py -c \"from src.backend.main import app; print(''App imported successfully'')\")",
-      "Bash(py c:WorkPoCsNudj-POCtest_imports.py)",
-      "Bash(py test_imports.py)",
-      "Bash($env:PYTHONPATH=\"c:\\Work\\PoCs\\Nudj-POC\")",
-      "Bash($env:DEBUG=\"true\")",
-      "Bash(py:*)",
-      "Bash(curl:*)",
-      "Bash(test:*)",
-      "Bash(npm install)"
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
