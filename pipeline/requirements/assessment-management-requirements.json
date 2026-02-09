@@ -1,0 +1,88 @@
+{
+    "feature": "assessment-management",
+    "status": "analysis_complete",
+    "requirements": [
+        {
+            "id": "REQ-ASMT-001",
+            "category": "Core",
+            "title": "Assessment Project Creation",
+            "description": "Admin creates assessment projects for client organizations using the HR Maturity Framework.",
+            "acceptanceCriteria": [
+                "Super Admin can create a new assessment project for an organization",
+                "Can configure assessment deadline",
+                "Can select domains to be included (default all 9)",
+                "Can configure domain weights (default standard weights)",
+                "Initial status is 'Draft'"
+            ]
+        },
+        {
+            "id": "REQ-ASMT-002",
+            "category": "Core",
+            "title": "Questionnaire Interface",
+            "description": "Bilingual interface for assessors to select maturity levels for elements within their assigned domains.",
+            "acceptanceCriteria": [
+                "Display elements grouped by domain and dimension",
+                "Show bilingual (Arabic/English) descriptions for each maturity level (1-4)",
+                "Single choice selection for maturity level",
+                "Auto-save progress",
+                "Progress bar per domain"
+            ]
+        },
+        {
+            "id": "REQ-ASMT-003",
+            "category": "Evidence",
+            "title": "Evidence Upload Management",
+            "description": "System for uploading and managing evidence files required for assessment validation.",
+            "acceptanceCriteria": [
+                "Upload interface for each element (checklist)",
+                "Support drag-and-drop",
+                "Restrict file types (PDF, Images, Office) and size",
+                "Magic bytes validation for security",
+                "Store files in S3/Object Storage (simulated for POC or local)",
+                "Link evidence to specific assessment elements"
+            ]
+        },
+        {
+            "id": "REQ-ASMT-004",
+            "category": "Scoring",
+            "title": "Automated Scoring Engine",
+            "description": "Calculate scores based on the 9-domain framework logic.",
+            "acceptanceCriteria": [
+                "Calculate Element Score (0%, 33%, 67%, 100%)",
+                "Calculate Domain Score (Existence 30%, Application 50%, Automation 20%)",
+                "Calculate Overall Score based on domain weights",
+                "Recalculate on any change",
+                "Persist scores to database"
+            ]
+        },
+        {
+            "id": "REQ-ASMT-005",
+            "category": "Workflow",
+            "title": "Assessment Workflow State Machine",
+            "description": "Manage the lifecycle states of an assessment.",
+            "acceptanceCriteria": [
+                "Implement states: Draft, In Progress, Under Review, Revision Requested, Completed, Archived",
+                "Enforce transition rules (e.g., can't complete if domains incomplete)",
+                "Track history of state changes (audit)"
+            ]
+        },
+        {
+            "id": "REQ-COLLAB-002",
+            "category": "Collaboration",
+            "title": "Assessment Delegation",
+            "description": "Client Admin assigns specific domains to internal assessors.",
+            "acceptanceCriteria": [
+                "Client Admin can list org users",
+                "Assign one or more domains to a user",
+                "Send email notification on assignment",
+                "Restrict assessor view to assigned domains"
+            ]
+        }
+    ],
+    "technicalConstraints": [
+        "FastAPI + SQLAlchemy 2.0 Async",
+        "React 19 + Zustand + React Query",
+        "PostgreSQL with JSONB for flexible storage",
+        "Tenant isolation enforcement"
+    ]
+}

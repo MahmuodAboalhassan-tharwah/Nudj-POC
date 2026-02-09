@@ -1,0 +1,957 @@
+{
+  "feature": "Authentication & Authorization System",
+  "sourceRequirements": "pipeline/requirements/auth-system-requirements.json",
+  "createdAt": "2026-02-08T14:30:00Z",
+  "totalTasks": 34,
+  "designDecisions": [
+    "SSO stubbed with interfaces but not integrated in POC (OQ-AUTH-005 suggestedDefault)",
+    "HS256 for JWT in POC with architecture supporting future RS256 migration (OQ-AUTH-006)",
+    "Initial Super Admin seeded via CLI migration script (OQ-AUTH-007)",
+    "Session timeout 30 min default, configurable per org (OQ-AUTH-002)",
+    "MFA mandatory for Super Admin/Analyst, optional for Client Admin/Assessor (OQ-AUTH-008)",
+    "Unifonic for SMS OTP delivery (OQ-AUTH-004 — Saudi-based provider)",
+    "SSO optional per org; users can choose SSO or local when both available (OQ-AUTH-001)",
+    "Email sent after 3+ failed login attempts from unknown IP (OQ-AUTH-003)"
+  ],
+  "executionPlan": {
+    "phase1_foundation": {
+      "label": "Foundation — Database Models, Config, Types",
+      "description": "All database models, Alembic migrations, base config, shared types. No inter-task dependencies within this phase.",
+      "parallel": ["TASK-001", "TASK-002", "TASK-003", "TASK-004", "TASK-005", "TASK-006"]
+    },
+    "phase2_backend_services": {
+      "label": "Backend Services — Business Logic Layer",
+      "description": "Service layer implementations. Depend on models from Phase 1.",
+      "parallel": ["TASK-007", "TASK-008", "TASK-009", "TASK-010", "TASK-011", "TASK-012", "TASK-013"]
+    },
+    "phase3_backend_api": {
+      "label": "Backend API — Routers, Schemas, Dependencies",
+      "description": "FastAPI routers and Pydantic schemas. Depend on services from Phase 2.",
+      "parallel": ["TASK-014", "TASK-015", "TASK-016"]
+    },
+    "phase4_frontend_infra": {
+      "label": "Frontend Infrastructure — Types, Store, Hooks, API Client",
+      "description": "Frontend types, Zustand store, API hooks, shared utilities. Depend on backend API being defined (Phase 3).",
+      "parallel": ["TASK-017", "TASK-018", "TASK-019", "TASK-020", "TASK-021", "TASK-022"]
+    },
+    "phase5_frontend_components": {
+      "label": "Frontend Components — Presentational UI",
+      "description": "Dumb/presentational components. Depend on types from Phase 4.",
+      "parallel": ["TASK-023", "TASK-024", "TASK-025", "TASK-026", "TASK-027", "TASK-028"]
+    },
+    "phase6_frontend_pages": {
+      "label": "Frontend Pages — Smart Route Components",
+      "description": "Page components that compose presentational components and hooks. Depend on components (Phase 5) and hooks (Phase 4).",
+      "parallel": ["TASK-029", "TASK-030", "TASK-031", "TASK-032", "TASK-033"]
+    },
+    "phase7_integration": {
+      "label": "Integration — Router Config, Translations, Seed Script",
+      "description": "Wire everything together. Depends on all pages being defined.",
+      "parallel": ["TASK-034"]
+    }
+  },
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Create auth SQLAlchemy models and Alembic migration",
+      "layer": "backend-model",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-002", "REQ-AUTH-003", "REQ-AUTH-004", "REQ-AUTH-005", "REQ-AUTH-006", "REQ-AUTH-009"],
+      "description": "Create all auth-related SQLAlchemy models: User (with all fields including role enum, MFA, SSO, lockout), Invitation, RefreshToken, PasswordResetToken, UserSession, UserDomainAssignment, AnalystOrgAssignment, SSOConfiguration, DataDeletionRequest. Create the Alembic migration for all tables. Use SQLAlchemy 2.0 async patterns. Include TimestampMixin from common models. Role enum: SUPER_ADMIN, ANALYST, CLIENT_ADMIN, ASSESSOR. All UUID primary keys. Proper foreign keys and indexes.",
+      "filesOwned": [
+        "src/backend/app/auth/models.py",
+        "src/backend/alembic/versions/001_create_auth_tables.py"
+      ],
+      "acceptanceCriteria": [
+        "User model has all fields: id (UUID), email (unique), password_hash, name_ar, name_en, phone_sa, role (enum), organization_id, is_active, is_verified, mfa_enabled, mfa_secret, sso_provider, sso_external_id, failed_login_attempts, locked_until, created_at, updated_at, last_login_at, created_by_invitation_id",
+        "Invitation model: id (UUID), token (unique), email, role, organization_id, domain_ids (JSONB), expires_at, used_at, invited_by (FK users), created_at",
+        "RefreshToken model: id (UUID), user_id (FK), token_hash, expires_at, revoked_at, device_info, ip_address, created_at",
+        "PasswordResetToken model: id (UUID), user_id (FK), token_hash, expires_at, used_at, created_at",
+        "UserSession model: id (UUID), user_id (FK), session_token_hash, ip_address, user_agent, last_activity_at, expires_at, created_at",
+        "UserDomainAssignment model: id, user_id (FK), assessment_id (FK nullable), domain_ids (JSONB), assigned_at, assigned_by (FK)",
+        "AnalystOrgAssignment model: id, user_id (FK), organization_id (FK), assigned_at, assigned_by (FK)",
+        "SSOConfiguration model: id, organization_id (FK), provider (enum), tenant_id, client_id, client_secret_encrypted, is_active, configured_by (FK), created_at, updated_at",
+        "DataDeletionRequest model: id, user_id (FK), requested_at, processed_at, processed_by, status",
+        "Role enum (SUPER_ADMIN, ANALYST, CLIENT_ADMIN, ASSESSOR) and SSOProvider enum (AZURE_AD, GOOGLE)",
+        "Alembic migration creates all tables with proper indexes"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — root task. Common base models (TimestampMixin) should be created here if they don't exist.",
+      "codingPrompt": "Create SQLAlchemy 2.0 async models for the complete auth system in src/backend/app/auth/models.py. Use Mapped[] type annotations, mapped_column(). Define enums with Python enum.Enum and SQLAlchemy Enum type. All primary keys are UUID using uuid4. Create proper foreign key relationships. Include these models: User, Invitation, RefreshToken, PasswordResetToken, UserSession, UserDomainAssignment, AnalystOrgAssignment, SSOConfiguration, DataDeletionRequest. Add indexes on: users.email, users.organization_id, invitations.token, invitations.email, refresh_tokens.user_id, user_sessions.user_id. Also create the Alembic migration file. Follow SQLAlchemy 2.0 declarative mapping style with __tablename__. Import Base from src/backend/database.py (create if needed). All datetime fields should default to UTC now.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-002",
+      "title": "Create audit_logs model and migration",
+      "layer": "backend-model",
+      "requirementRefs": ["REQ-AUTH-006", "REQ-AUTH-008"],
+      "description": "Create the AuditLog SQLAlchemy model in the common module (since audit is cross-cutting). Append-only design. Includes event_type enum covering all auth events. Indexed for efficient querying by event_type, created_at, user_id, organization_id. Separate migration file.",
+      "filesOwned": [
+        "src/backend/app/common/models.py",
+        "src/backend/alembic/versions/002_create_audit_logs.py"
+      ],
+      "acceptanceCriteria": [
+        "AuditLog model: id (UUID), event_type (enum), user_id (FK nullable), email, ip_address, user_agent, details (JSONB), organization_id (FK nullable), created_at",
+        "AuditEventType enum covers: LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_COMPLETED, MFA_ENABLED, MFA_DISABLED, ROLE_CHANGED, USER_DEACTIVATED, USER_REACTIVATED, INVITATION_SENT, INVITATION_ACCEPTED, INVITATION_EXPIRED, SESSION_CREATED, SESSION_EXPIRED, UNAUTHORIZED_ACCESS, USER_REGISTERED, ACCOUNT_LOCKED, DATA_EXPORT_REQUESTED, DATA_DELETION_REQUESTED",
+        "TimestampMixin base class defined for reuse",
+        "Migration creates audit_logs table with composite indexes"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — root task. Creates the common base models that TASK-001 auth models may reference.",
+      "codingPrompt": "Create src/backend/app/common/models.py with: 1) A TimestampMixin class with created_at and updated_at columns (UTC default). 2) An AuditEventType enum with all auth-related event types. 3) An AuditLog model (append-only by design) with fields: id (UUID pk), event_type (AuditEventType enum), user_id (UUID nullable), email (str nullable), ip_address (str), user_agent (str nullable), details (JSONB), organization_id (UUID nullable), created_at (UTC). Add indexes on (event_type, created_at), (user_id), (organization_id, created_at). Also create Alembic migration. Use SQLAlchemy 2.0 Mapped[] style.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-003",
+      "title": "Create backend config and database setup",
+      "layer": "infrastructure",
+      "requirementRefs": ["REQ-AUTH-003", "REQ-AUTH-004", "REQ-AUTH-010"],
+      "description": "Create the FastAPI application config using pydantic-settings, the async database engine/session setup, and the Alembic configuration. Config includes JWT settings, Redis URL, database URL, email/SMS provider settings, CORS origins, session timeout, encryption keys.",
+      "filesOwned": [
+        "src/backend/config.py",
+        "src/backend/database.py",
+        "src/backend/alembic/alembic.ini",
+        "src/backend/alembic/env.py"
+      ],
+      "acceptanceCriteria": [
+        "Settings class loads from environment variables with sensible defaults",
+        "JWT_SECRET_KEY, JWT_ALGORITHM (HS256 default), ACCESS_TOKEN_EXPIRE_MINUTES (15), REFRESH_TOKEN_EXPIRE_DAYS (7) configured",
+        "DATABASE_URL for async PostgreSQL (asyncpg)",
+        "REDIS_URL for cache/session/rate-limiting",
+        "SESSION_TIMEOUT_MINUTES (30 default)",
+        "Async SQLAlchemy engine and session factory created",
+        "get_async_session() dependency function for FastAPI DI",
+        "Alembic configured for async migrations"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — root task. Other tasks import Settings and get_async_session from here.",
+      "codingPrompt": "Create src/backend/config.py with a Settings class using pydantic-settings BaseSettings. Include sections for: database (DATABASE_URL, async PostgreSQL), Redis (REDIS_URL), JWT (JWT_SECRET_KEY, JWT_ALGORITHM='HS256', ACCESS_TOKEN_EXPIRE_MINUTES=15, REFRESH_TOKEN_EXPIRE_DAYS=7), session (SESSION_TIMEOUT_MINUTES=30), email (EMAIL_PROVIDER, SENDGRID_API_KEY), SMS (SMS_PROVIDER='unifonic', UNIFONIC_APP_ID, UNIFONIC_SENDER_ID), security (CORS_ORIGINS, ENCRYPTION_KEY for PII), and app (APP_NAME='Nudj', DEBUG=False). Use model_config with env_file='.env'. Create src/backend/database.py with async engine (create_async_engine), async sessionmaker, Base declarative base, and get_async_session async generator for FastAPI Depends(). Create alembic.ini and env.py for async Alembic migrations.",
+      "estimatedToolCalls": 10
+    },
+    {
+      "id": "TASK-004",
+      "title": "Create common exceptions and error handlers",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-003", "REQ-AUTH-005", "REQ-AUTH-009"],
+      "description": "Create base exception classes and global FastAPI exception handlers. Auth-specific exceptions for the auth module. All error responses bilingual (Arabic/English).",
+      "filesOwned": [
+        "src/backend/app/common/exceptions.py",
+        "src/backend/app/auth/exceptions.py"
+      ],
+      "acceptanceCriteria": [
+        "Base AppException with status_code, error_code, message_en, message_ar",
+        "Auth exceptions: InvalidCredentialsError, AccountLockedError, TokenExpiredError, InvitationExpiredError, DuplicateEmailError, InvalidPasswordError, UnauthorizedError, ForbiddenError, RateLimitExceededError, AccountDeactivatedError, InvalidOTPError, MFARequiredError",
+        "Global exception handler for FastAPI that returns bilingual error responses",
+        "Error response schema: {error_code, message, details} with language based on Accept-Language header"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — root task. All service tasks will import these exceptions.",
+      "codingPrompt": "Create src/backend/app/common/exceptions.py with: 1) AppException base class (status_code: int, error_code: str, message_en: str, message_ar: str). 2) Global exception handlers for FastAPI: handle_app_exception() that returns JSON with error_code, message (picking ar or en based on Accept-Language header), and details. 3) NotFoundError, ValidationError, ConflictError as common exceptions. Then create src/backend/app/auth/exceptions.py with auth-specific exceptions inheriting AppException: InvalidCredentialsError (401, 'Do not reveal if email exists'), AccountLockedError (423), TokenExpiredError (401), InvitationExpiredError (410), DuplicateEmailError (409), InvalidPasswordError (422), UnauthorizedError (401), ForbiddenError (403), RateLimitExceededError (429), AccountDeactivatedError (403), InvalidOTPError (422), MFARequiredError (403, include temp_token in response). Each with Arabic and English messages.",
+      "estimatedToolCalls": 6
+    },
+    {
+      "id": "TASK-005",
+      "title": "Create frontend auth types and constants",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-002", "REQ-AUTH-003", "REQ-AUTH-004"],
+      "description": "Define all TypeScript types, interfaces, and enums for the auth feature. These are used by all frontend auth tasks.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/types/auth.types.ts"
+      ],
+      "acceptanceCriteria": [
+        "Role enum: SUPER_ADMIN, ANALYST, CLIENT_ADMIN, ASSESSOR",
+        "User interface with all fields matching backend User model",
+        "LoginPayload, LoginResponse (with tokens), RegisterPayload, RegisterResponse types",
+        "InvitationPayload, InvitationValidation types",
+        "OTPVerifyPayload type",
+        "ForgotPasswordPayload, ResetPasswordPayload types",
+        "MFASetupResponse, MFAVerifyPayload types",
+        "TokenPair (access_token, refresh_token, expires_in) type",
+        "Permission type and RolePermissionMap",
+        "AuthError type for error responses"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — root task. All frontend auth tasks depend on these types.",
+      "codingPrompt": "Create src/frontend/src/features/auth/types/auth.types.ts with all TypeScript types for the auth system. Named exports only, no default exports. Types: 1) Role enum (SUPER_ADMIN, ANALYST, CLIENT_ADMIN, ASSESSOR). 2) SSOProvider enum (AZURE_AD, GOOGLE). 3) User interface (id: string, email, nameAr, nameEn, phoneSa, role: Role, organizationId, isActive, isVerified, mfaEnabled, ssoProvider, lastLoginAt, createdAt). 4) TokenPair {accessToken, refreshToken, expiresIn}. 5) LoginPayload {email, password}. 6) LoginResponse {user: User, tokens: TokenPair, mfaRequired?: boolean, mfaTempToken?: string}. 7) RegisterPayload {token: string, nameAr, nameEn, email, phoneSa, password}. 8) RegisterResponse {user: User, tokens: TokenPair}. 9) InvitationValidation {valid: boolean, email, role, organizationName, expiresAt}. 10) OTPVerifyPayload {phoneSa, code, registrationToken}. 11) ForgotPasswordPayload {email}. 12) ResetPasswordPayload {token, newPassword}. 13) MFASetupResponse {qrUri, secret}. 14) MFAVerifyPayload {code, tempToken?}. 15) Permission string literal type and RolePermissionMap. 16) AuthError {errorCode, message, details?}.",
+      "estimatedToolCalls": 3
+    },
+    {
+      "id": "TASK-006",
+      "title": "Create frontend admin types",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-007", "REQ-AUTH-008"],
+      "description": "Define TypeScript types for the admin feature (user management and audit trail).",
+      "filesOwned": [
+        "src/frontend/src/features/admin/types/admin.types.ts"
+      ],
+      "acceptanceCriteria": [
+        "UserListItem interface (id, email, nameAr, nameEn, role, organizationName, isActive, lastLoginAt, createdAt)",
+        "InvitePayload interface (email, nameAr, nameEn, role, domainIds?)",
+        "BulkInviteResult interface (total, successful, failed, errors[])",
+        "ChangeRolePayload interface",
+        "UserActivityItem interface",
+        "AuditLogEntry interface (id, eventType, userId, email, ipAddress, userAgent, details, organizationId, createdAt)",
+        "AuditLogFilter interface (eventType?, userId?, dateFrom?, dateTo?, organizationId?)",
+        "Pagination types"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "Imports Role enum from TASK-005's auth.types.ts",
+      "codingPrompt": "Create src/frontend/src/features/admin/types/admin.types.ts with TypeScript interfaces for user management and audit trail. Named exports only. Import { Role } from '../../auth/types/auth.types'. Types: 1) UserListItem {id, email, nameAr, nameEn, role: Role, organizationId, organizationName, isActive, isVerified, lastLoginAt, createdAt, domainIds?}. 2) InvitePayload {email, nameAr?, nameEn?, role: Role, domainIds?: number[]}. 3) BulkInvitePayload {csvFile: File}. 4) BulkInviteResult {total, successful, failed, errors: Array<{row, email, reason}>}. 5) ChangeRolePayload {userId, newRole: Role}. 6) UserActivityItem {id, eventType, timestamp, ipAddress, details}. 7) AuditLogEntry {id, eventType, userId?, email, ipAddress, userAgent, details: Record<string,unknown>, organizationId?, createdAt}. 8) AuditLogFilter {eventType?, userId?, email?, dateFrom?, dateTo?, organizationId?, page?, pageSize?}. 9) PaginatedResponse<T> {items: T[], total, page, pageSize, totalPages}.",
+      "estimatedToolCalls": 3
+    },
+    {
+      "id": "TASK-007",
+      "title": "Create JWT service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-004"],
+      "description": "JWT token creation, verification, and decoding. Uses python-jose with HS256. Access tokens (15 min) contain user_id, email, role, organization_id. Refresh tokens (7 days) for rotation.",
+      "filesOwned": [
+        "src/backend/app/auth/jwt_service.py"
+      ],
+      "acceptanceCriteria": [
+        "create_access_token(user) returns JWT with user_id, email, role, organization_id, exp",
+        "create_refresh_token(user) returns JWT with user_id, token_family, exp",
+        "verify_token(token) validates signature, expiry, and returns payload",
+        "decode_token(token) decodes without verification (for expired token inspection)",
+        "Token expiry configurable via Settings",
+        "JWTError exceptions properly raised"
+      ],
+      "dependencies": ["TASK-003"],
+      "contextFromOtherTasks": "Imports Settings from TASK-003's config.py for JWT secret and expiry configuration.",
+      "codingPrompt": "Create src/backend/app/auth/jwt_service.py with a JWTService class. Use python-jose for JWT operations. Methods: 1) create_access_token(user_id: UUID, email: str, role: str, organization_id: UUID | None) -> str — creates JWT with sub=str(user_id), email, role, org_id=str(organization_id), exp=utcnow+ACCESS_TOKEN_EXPIRE_MINUTES. 2) create_refresh_token(user_id: UUID) -> str — creates JWT with sub=str(user_id), type='refresh', jti=uuid4(), exp=utcnow+REFRESH_TOKEN_EXPIRE_DAYS. 3) verify_token(token: str) -> dict — verifies signature and expiry, returns payload, raises TokenExpiredError or InvalidTokenError. 4) decode_token(token: str) -> dict — decodes without verification. 5) create_token_pair(user_id, email, role, org_id) -> tuple[str, str] — convenience method returning (access, refresh). Inject Settings via constructor. All methods are regular (not async) since JWT operations are CPU-bound.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-008",
+      "title": "Create password service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-005"],
+      "description": "Password hashing (bcrypt), verification, strength validation, and reset token generation.",
+      "filesOwned": [
+        "src/backend/app/auth/password_service.py"
+      ],
+      "acceptanceCriteria": [
+        "hash_password(plain) returns bcrypt hash",
+        "verify_password(plain, hashed) returns bool",
+        "validate_password_strength(password) returns (valid, errors[]) — min 8 chars, uppercase, number, special char",
+        "generate_reset_token() returns cryptographically random token",
+        "hash_token(token) returns SHA-256 hash for storage"
+      ],
+      "dependencies": [],
+      "contextFromOtherTasks": "None — standalone utility service.",
+      "codingPrompt": "Create src/backend/app/auth/password_service.py with a PasswordService class. Use passlib with bcrypt context. Methods: 1) hash_password(password: str) -> str — bcrypt hash. 2) verify_password(plain_password: str, hashed_password: str) -> bool. 3) validate_password_strength(password: str) -> tuple[bool, list[str]] — checks min 8 chars, at least 1 uppercase, 1 digit, 1 special character. Returns (True, []) or (False, ['Password must contain at least one uppercase letter', ...]). Error messages should have both English keys that map to i18n. 4) generate_reset_token() -> str — secrets.token_urlsafe(32). 5) hash_token(token: str) -> str — hashlib.sha256 for storing tokens in DB (not the token itself). Class methods can be static or classmethod since no state needed.",
+      "estimatedToolCalls": 3
+    },
+    {
+      "id": "TASK-009",
+      "title": "Create invitation service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-001"],
+      "description": "Invitation token generation, email sending, expiry checking, and validation. Generates secure invitation tokens, stores them, and sends invitation emails via email service.",
+      "filesOwned": [
+        "src/backend/app/auth/invitation_service.py"
+      ],
+      "acceptanceCriteria": [
+        "generate_invitation_token() creates secure random token",
+        "create_invitation(email, role, org_id, domain_ids, invited_by) persists invitation and triggers email",
+        "validate_invitation_token(token) returns invitation details or raises InvitationExpiredError",
+        "check_expiry(invitation) returns bool",
+        "request_new_invitation(old_token) invalidates old and creates new",
+        "send_invitation_email(invitation) sends bilingual email"
+      ],
+      "dependencies": ["TASK-001", "TASK-003", "TASK-004"],
+      "contextFromOtherTasks": "Uses Invitation model from TASK-001, async session from TASK-003, InvitationExpiredError from TASK-004.",
+      "codingPrompt": "Create src/backend/app/auth/invitation_service.py with an InvitationService class. Inject async session and settings. Methods: 1) async create_invitation(email: str, role: Role, organization_id: UUID, domain_ids: list[int] | None, invited_by: UUID) -> Invitation — generates token via secrets.token_urlsafe(48), creates Invitation record with 7-day expiry, triggers send_invitation_email(), returns Invitation. 2) async validate_invitation_token(token: str) -> Invitation — looks up invitation by token, checks not used, checks not expired, raises InvitationExpiredError if expired, raises NotFoundError if not found, returns Invitation. 3) async mark_invitation_used(invitation_id: UUID) -> None — sets used_at=utcnow. 4) async request_new_invitation(old_token: str) -> Invitation — validates old token exists (even if expired), creates new invitation with same email/role/org/domains. 5) _check_expiry(invitation: Invitation) -> bool — returns True if expired. 6) async _send_invitation_email(invitation: Invitation) -> None — placeholder that logs email send (actual email integration is infrastructure concern). Handle duplicate email check before creating invitation.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-010",
+      "title": "Create auth service (core authentication logic)",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-003", "REQ-AUTH-004", "REQ-AUTH-005"],
+      "description": "Core authentication service handling registration, login, token refresh, logout, password reset. Orchestrates JWT service, password service, and invitation service.",
+      "filesOwned": [
+        "src/backend/app/auth/service.py"
+      ],
+      "acceptanceCriteria": [
+        "register_user() validates invitation, creates user with hashed password, marks invitation used, returns user + tokens",
+        "authenticate_user() verifies credentials, checks lockout, returns user + tokens or raises appropriate exception",
+        "refresh_access_token() validates refresh token, rotates it, returns new pair",
+        "revoke_tokens() invalidates refresh token",
+        "initiate_password_reset() generates reset token, sends email",
+        "complete_password_reset() validates token, updates password, invalidates sessions",
+        "verify_otp() validates OTP code for phone verification",
+        "export_user_data() generates user data export",
+        "process_deletion_request() anonymizes user PII",
+        "Lockout logic: increment_failed_attempts, check_account_lockout, reset_failed_attempts"
+      ],
+      "dependencies": ["TASK-001", "TASK-003", "TASK-004", "TASK-007", "TASK-008", "TASK-009"],
+      "contextFromOtherTasks": "Uses User/RefreshToken/PasswordResetToken models (TASK-001), Settings/session (TASK-003), exceptions (TASK-004), JWTService (TASK-007), PasswordService (TASK-008), InvitationService (TASK-009).",
+      "codingPrompt": "Create src/backend/app/auth/service.py with an AuthService class. Inject async session, JWTService, PasswordService, InvitationService via constructor. Core methods: 1) async register_user(token: str, name_ar: str, name_en: str, phone_sa: str, password: str) -> tuple[User, str, str] — validate invitation, check no duplicate email, validate password strength, hash password, create User with role/org from invitation, mark invitation used, generate token pair, return (user, access_token, refresh_token). 2) async authenticate_user(email: str, password: str, ip: str, user_agent: str) -> tuple[User, str, str] — find user by email, check is_active, check_account_lockout, verify password (on fail: increment_failed_attempts), reset_failed_attempts on success, create token pair, return tuple. 3) async refresh_access_token(refresh_token: str) -> tuple[str, str] — verify refresh JWT, find RefreshToken in DB, check not revoked, revoke old, create new pair (token rotation), return new pair. 4) async logout(user_id: UUID, refresh_token: str) -> None — revoke refresh token. 5) async initiate_password_reset(email: str) -> None — find user, generate reset token via PasswordService, store PasswordResetToken, send email (always return success even if email not found — prevent enumeration). 6) async complete_password_reset(token: str, new_password: str) -> None — validate token hash, check not expired/used, validate password strength, update user password_hash, mark token used, revoke all user refresh tokens. 7) async verify_otp(phone_sa: str, code: str) -> bool — check OTP in Redis, return bool. 8) async check_account_lockout(user: User) -> None — if locked_until > utcnow raise AccountLockedError. 9) async increment_failed_attempts(user: User) -> None — increment counter, if >= 5 set locked_until = utcnow + 30 min. 10) async reset_failed_attempts(user: User) -> None. 11) async export_user_data(user_id: UUID) -> dict — gather all user data for PDPL export. 12) async anonymize_user(user_id: UUID) -> None — replace PII with anonymized values, preserve assessment data.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-011",
+      "title": "Create session service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-006"],
+      "description": "Session lifecycle management: creation, activity tracking, expiry, and cleanup. Uses Redis for real-time activity tracking.",
+      "filesOwned": [
+        "src/backend/app/auth/session_service.py"
+      ],
+      "acceptanceCriteria": [
+        "create_session(user_id, ip, user_agent) creates UserSession record + Redis entry",
+        "extend_session(session_id) updates last_activity_at in Redis",
+        "expire_session(session_id) marks session expired",
+        "get_active_sessions(user_id) returns list of active sessions",
+        "cleanup_expired_sessions() background task for periodic cleanup",
+        "check_session_timeout(session_id) checks against configurable timeout"
+      ],
+      "dependencies": ["TASK-001", "TASK-003"],
+      "contextFromOtherTasks": "Uses UserSession model from TASK-001, Settings/session from TASK-003.",
+      "codingPrompt": "Create src/backend/app/auth/session_service.py with a SessionService class. Inject async DB session, Redis client, and Settings. Methods: 1) async create_session(user_id: UUID, ip_address: str, user_agent: str) -> UserSession — create UserSession record in DB with session_token_hash (generate random token, hash it), set expires_at based on SESSION_TIMEOUT_MINUTES, also set Redis key 'session:{session_id}' with TTL = SESSION_TIMEOUT_MINUTES * 60, return session. 2) async extend_session(session_id: UUID) -> None — update last_activity_at in DB and reset Redis TTL. 3) async expire_session(session_id: UUID) -> None — update expires_at to utcnow in DB, delete Redis key. 4) async get_active_sessions(user_id: UUID) -> list[UserSession] — query sessions where expires_at > utcnow. 5) async revoke_session(session_id: UUID) -> None — alias for expire. 6) async revoke_all_user_sessions(user_id: UUID) -> None — expire all sessions for user. 7) async is_session_active(session_id: UUID) -> bool — check Redis key exists (fast path) or fallback to DB check. 8) async cleanup_expired_sessions() -> int — delete sessions where expires_at < utcnow - 24h, return count deleted.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-012",
+      "title": "Create audit service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-008"],
+      "description": "Audit trail logging service. Append-only design. Called from all auth operations to log events.",
+      "filesOwned": [
+        "src/backend/app/common/audit_service.py"
+      ],
+      "acceptanceCriteria": [
+        "log_event(event_type, user_id, email, ip, user_agent, details, org_id) creates AuditLog entry",
+        "query_audit_trail(filters) returns paginated audit entries",
+        "export_audit_trail_csv(filters) generates CSV export",
+        "Append-only: no update or delete methods exposed"
+      ],
+      "dependencies": ["TASK-002", "TASK-003"],
+      "contextFromOtherTasks": "Uses AuditLog model and AuditEventType from TASK-002, async session from TASK-003.",
+      "codingPrompt": "Create src/backend/app/common/audit_service.py with an AuditService class. Inject async DB session. This is an APPEND-ONLY service — no update or delete methods. Methods: 1) async log_event(event_type: AuditEventType, user_id: UUID | None = None, email: str | None = None, ip_address: str = '', user_agent: str | None = None, details: dict | None = None, organization_id: UUID | None = None) -> AuditLog — create and flush AuditLog record. This should be fire-and-forget safe (catch and log exceptions, never let audit logging break the main flow). 2) async query_audit_trail(event_type: AuditEventType | None = None, user_id: UUID | None = None, email: str | None = None, organization_id: UUID | None = None, date_from: datetime | None = None, date_to: datetime | None = None, page: int = 1, page_size: int = 50) -> tuple[list[AuditLog], int] — filtered, paginated query. Returns (items, total_count). 3) async export_audit_trail_csv(filters: dict) -> str — generates CSV string from filtered audit entries. Use Python csv.StringIO writer. Columns: timestamp, event_type, email, ip_address, user_agent, details, organization_id. 4) Helper: async get_user_activity(user_id: UUID, page: int = 1, page_size: int = 20) -> tuple[list[AuditLog], int] — convenience filter by user_id.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-013",
+      "title": "Create permissions and RBAC service",
+      "layer": "backend-service",
+      "requirementRefs": ["REQ-AUTH-002"],
+      "description": "Role-permission mapping, permission constants, role hierarchy logic, and SSO/MFA service stubs.",
+      "filesOwned": [
+        "src/backend/app/auth/permissions.py",
+        "src/backend/app/auth/sso_service.py",
+        "src/backend/app/auth/mfa_service.py"
+      ],
+      "acceptanceCriteria": [
+        "Permission constants defined for all platform actions",
+        "ROLE_PERMISSIONS map assigns permissions to each role",
+        "Role hierarchy: SUPER_ADMIN > ANALYST > CLIENT_ADMIN > ASSESSOR",
+        "has_permission(role, permission) checks including hierarchy inheritance",
+        "has_role_or_above(user_role, required_role) checks hierarchy",
+        "SSO service stubbed with interfaces but not fully implemented (POC decision)",
+        "MFA service with TOTP setup/verify using pyotp"
+      ],
+      "dependencies": ["TASK-001", "TASK-003"],
+      "contextFromOtherTasks": "Uses Role enum from TASK-001 models, Settings from TASK-003.",
+      "codingPrompt": "Create three files: 1) src/backend/app/auth/permissions.py — Define Permission as a string enum with constants: MANAGE_PLATFORM, MANAGE_ORGANIZATIONS, MANAGE_ALL_USERS, MANAGE_ORG_USERS, VIEW_ALL_ASSESSMENTS, VIEW_ORG_ASSESSMENTS, VIEW_ASSIGNED_DOMAINS, CREATE_ASSESSMENT, REVIEW_ASSESSMENT, SUBMIT_ASSESSMENT, UPLOAD_EVIDENCE, VIEW_ALL_REPORTS, VIEW_ORG_REPORTS, VIEW_BDW, MANAGE_BENCHMARK, USE_AI_COACH, ADMIN_AI_COACH, VIEW_AUDIT_TRAIL, EXPORT_AUDIT_TRAIL. Define ROLE_HIERARCHY = {SUPER_ADMIN: 4, ANALYST: 3, CLIENT_ADMIN: 2, ASSESSOR: 1}. Define ROLE_PERMISSIONS dict mapping each Role to its set of Permission values. SUPER_ADMIN gets all. ANALYST gets assessment review, reports, AI coach. CLIENT_ADMIN gets org-scoped permissions. ASSESSOR gets domain-scoped only. Functions: has_permission(role, permission) -> bool, has_role_or_above(user_role, required_role) -> bool, get_permissions(role) -> set[Permission]. 2) src/backend/app/auth/sso_service.py — Stub SSOService class with methods: async initiate_sso(provider, org_id) -> str (returns auth URL), async handle_sso_callback(provider, code, state) -> User (provisions/links user). Both raise NotImplementedError with message 'SSO integration planned for post-POC'. Define SSOProviderFactory stub. 3) src/backend/app/auth/mfa_service.py — MFAService class using pyotp. Methods: setup_mfa(user_id) -> tuple[str, str] (secret, provisioning_uri), verify_mfa_token(secret: str, token: str) -> bool using pyotp.TOTP, disable_mfa(user_id) -> None.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-014",
+      "title": "Create auth Pydantic schemas",
+      "layer": "backend-api",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-003", "REQ-AUTH-004", "REQ-AUTH-005"],
+      "description": "All Pydantic v2 request/response schemas for the auth API. Covers registration, login, tokens, OTP, MFA, password reset, SSO, user data export/deletion.",
+      "filesOwned": [
+        "src/backend/app/auth/schemas.py",
+        "src/backend/app/common/schemas.py"
+      ],
+      "acceptanceCriteria": [
+        "RegisterRequest with Zod-equivalent validation (name_ar, name_en, email, phone_sa, password, invitation_token)",
+        "LoginRequest (email, password)",
+        "LoginResponse (user, access_token, refresh_token, expires_in, mfa_required?, mfa_temp_token?)",
+        "TokenRefreshRequest/Response",
+        "InvitationValidationResponse",
+        "OTPVerifyRequest/Response",
+        "ForgotPasswordRequest, ResetPasswordRequest",
+        "MFASetupResponse (qr_uri, secret), MFAVerifyRequest",
+        "UserResponse with from_attributes config",
+        "Common pagination schemas in common/schemas.py"
+      ],
+      "dependencies": ["TASK-001"],
+      "contextFromOtherTasks": "References Role enum from TASK-001 models for UserResponse. Common schemas used across modules.",
+      "codingPrompt": "Create two files: 1) src/backend/app/common/schemas.py — PaginatedResponse generic schema: class PaginatedResponse(BaseModel, Generic[T]) with items: list[T], total: int, page: int, page_size: int, total_pages: int. ErrorResponse schema: error_code: str, message: str, details: dict | None. 2) src/backend/app/auth/schemas.py — All auth Pydantic v2 schemas: RegisterRequest(BaseModel): invitation_token: str, name_ar: str (min 2), name_en: str (min 2), phone_sa: str (regex ^\\+966[0-9]{9}$), password: str (min 8). LoginRequest: email: EmailStr, password: str. LoginResponse: user: UserResponse, access_token: str, refresh_token: str, expires_in: int, mfa_required: bool = False, mfa_temp_token: str | None = None. TokenRefreshRequest: refresh_token: str. TokenRefreshResponse: access_token: str, refresh_token: str, expires_in: int. InvitationValidationResponse: valid: bool, email: str, role: str, organization_name: str | None, expires_at: datetime. OTPVerifyRequest: phone_sa: str, code: str (len 6). ForgotPasswordRequest: email: EmailStr. ResetPasswordRequest: token: str, new_password: str (min 8). MFASetupResponse: qr_uri: str, secret: str. MFAVerifyRequest: code: str (len 6), temp_token: str | None. UserResponse: id: UUID, email, name_ar, name_en, phone_sa, role, organization_id, is_active, is_verified, mfa_enabled, last_login_at, created_at — model_config = {'from_attributes': True}. InviteUserRequest: email: EmailStr, name_ar: str | None, name_en: str | None, role: str, domain_ids: list[int] | None. BulkInviteResponse: total: int, successful: int, failed: int, errors: list[dict]. ChangeRoleRequest: new_role: str. UserActivityResponse: events: list with event_type, timestamp, ip_address, details. DataExportRequest: (empty body). DeletionRequest: (empty body, confirmation via query param).",
+      "estimatedToolCalls": 6
+    },
+    {
+      "id": "TASK-015",
+      "title": "Create auth FastAPI router",
+      "layer": "backend-api",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-003", "REQ-AUTH-004", "REQ-AUTH-005", "REQ-AUTH-006", "REQ-AUTH-007", "REQ-AUTH-008", "REQ-AUTH-010"],
+      "description": "All FastAPI route handlers for auth. Delegates to services. Includes all endpoints for registration, login, logout, refresh, invitation, OTP, MFA, password reset, SSO, sessions, user management, audit trail, and PDPL data export/deletion.",
+      "filesOwned": [
+        "src/backend/app/auth/router.py"
+      ],
+      "acceptanceCriteria": [
+        "POST /auth/register — register via invitation",
+        "POST /auth/login — email/password login",
+        "POST /auth/logout — revoke tokens",
+        "POST /auth/refresh — refresh token pair",
+        "GET /auth/invitation/{token} — validate invitation",
+        "POST /auth/verify-otp — verify phone OTP",
+        "POST /auth/request-new-invitation — request new invite",
+        "POST /auth/forgot-password — initiate password reset",
+        "POST /auth/reset-password — complete password reset",
+        "GET /auth/sso/{provider} — initiate SSO",
+        "GET /auth/sso/{provider}/callback — SSO callback",
+        "POST /auth/mfa/setup — setup MFA",
+        "POST /auth/mfa/verify — verify MFA code",
+        "POST /auth/mfa/disable — disable MFA",
+        "GET /auth/sessions — list active sessions",
+        "DELETE /auth/sessions/{id} — revoke session",
+        "GET /users — list users (filtered, paginated)",
+        "POST /users/invite — invite single user",
+        "POST /users/bulk-invite — CSV bulk invite",
+        "PATCH /users/{id}/role — change role",
+        "PATCH /users/{id}/deactivate — deactivate user",
+        "PATCH /users/{id}/reactivate — reactivate user",
+        "GET /users/{id}/activity — user activity log",
+        "GET /audit-trail — filtered, paginated audit trail",
+        "GET /audit-trail/export — CSV export",
+        "POST /auth/request-data-export — PDPL data export",
+        "POST /auth/request-deletion — PDPL deletion request",
+        "All endpoints use proper dependencies (get_current_user, require_role)"
+      ],
+      "dependencies": ["TASK-010", "TASK-011", "TASK-012", "TASK-013", "TASK-014"],
+      "contextFromOtherTasks": "Uses AuthService (TASK-010), SessionService (TASK-011), AuditService (TASK-012), permissions (TASK-013), schemas (TASK-014), dependencies (TASK-016).",
+      "codingPrompt": "Create src/backend/app/auth/router.py with FastAPI APIRouter. Define two routers: auth_router (prefix='/auth', tags=['authentication']) and users_router (prefix='/users', tags=['user-management']). Use Depends() for service injection, current user, and role checks. Every endpoint should: 1) validate input via Pydantic schema, 2) call appropriate service method, 3) log audit event via AuditService, 4) return typed response. Endpoints: AUTH ROUTER: POST /register (public), POST /login (public), POST /logout (authenticated), POST /refresh (public — token in body), GET /invitation/{token} (public), POST /verify-otp (public), POST /request-new-invitation (public), POST /forgot-password (public), POST /reset-password (public), GET /sso/{provider} (public), GET /sso/{provider}/callback (public), POST /mfa/setup (authenticated), POST /mfa/verify (partial auth — mfa_temp_token), POST /mfa/disable (authenticated), GET /sessions (authenticated), DELETE /sessions/{session_id} (authenticated), POST /request-data-export (authenticated), POST /request-deletion (authenticated). USERS ROUTER: GET / (require MANAGE_ALL_USERS or MANAGE_ORG_USERS — Client Admin sees only their org), POST /invite (require MANAGE_ALL_USERS or MANAGE_ORG_USERS), POST /bulk-invite (same), PATCH /{id}/role (require MANAGE_ALL_USERS), PATCH /{id}/deactivate (require MANAGE_ALL_USERS or MANAGE_ORG_USERS), PATCH /{id}/reactivate (same), GET /{id}/activity (require MANAGE_ALL_USERS or own org). AUDIT ROUTER (nested under auth or separate): GET /audit-trail (require VIEW_AUDIT_TRAIL), GET /audit-trail/export (require EXPORT_AUDIT_TRAIL). For each endpoint, include Request parameter to extract ip_address and user_agent for audit logging.",
+      "estimatedToolCalls": 10
+    },
+    {
+      "id": "TASK-016",
+      "title": "Create auth dependencies and middleware",
+      "layer": "backend-api",
+      "requirementRefs": ["REQ-AUTH-002", "REQ-AUTH-006", "REQ-AUTH-009", "REQ-AUTH-010"],
+      "description": "FastAPI dependencies for authentication/authorization and middleware for tenant isolation, rate limiting, session activity, and security headers.",
+      "filesOwned": [
+        "src/backend/app/auth/dependencies.py",
+        "src/backend/app/common/middleware.py"
+      ],
+      "acceptanceCriteria": [
+        "get_current_user() dependency decodes JWT, returns User",
+        "require_role(roles) dependency factory checks user has required role",
+        "require_permission(permission) dependency factory checks permission",
+        "require_org_access(org_id) dependency checks user can access organization",
+        "TenantIsolationMiddleware injects organization_id filter",
+        "SessionActivityMiddleware updates last_activity_at on each request",
+        "RateLimitMiddleware using Redis sliding window",
+        "SecurityHeadersMiddleware adds HSTS, X-Content-Type-Options, X-Frame-Options, CSP"
+      ],
+      "dependencies": ["TASK-001", "TASK-003", "TASK-004", "TASK-007", "TASK-013"],
+      "contextFromOtherTasks": "Uses User model (TASK-001), Settings/session (TASK-003), exceptions (TASK-004), JWTService (TASK-007), permissions (TASK-013).",
+      "codingPrompt": "Create two files: 1) src/backend/app/auth/dependencies.py — FastAPI dependency functions: async get_current_user(authorization: str = Header(...), session=Depends(get_async_session), jwt_service=Depends(get_jwt_service)) -> User — extract Bearer token, verify JWT, load user from DB, check is_active, return User. If token invalid/expired raise UnauthorizedError. Function require_role(*roles: Role) -> Callable — returns a dependency that checks current_user.role in roles, raises ForbiddenError if not. Function require_permission(permission: Permission) -> Callable — checks has_permission(user.role, permission). Function require_org_access(org_id_param: str = 'organization_id') -> Callable — for Super Admin: allow all, for Analyst: check AnalystOrgAssignment, for Client Admin/Assessor: check user.organization_id matches. 2) src/backend/app/common/middleware.py — Four middleware classes: a) TenantIsolationMiddleware(BaseHTTPMiddleware) — reads user from request state (set by auth), injects org_id filter context. b) SessionActivityMiddleware(BaseHTTPMiddleware) — on each authenticated request, update session last_activity_at in Redis. c) RateLimitMiddleware(BaseHTTPMiddleware) — configure per-endpoint rate limits (login: 20/min per IP, register: 10/10min per IP, password-reset: 5/hour per email). Uses Redis sliding window: key='ratelimit:{endpoint}:{identifier}', ZADD with timestamp, ZRANGEBYSCORE to count. Returns 429 if exceeded. Fail-open if Redis unavailable. d) SecurityHeadersMiddleware(BaseHTTPMiddleware) — adds Strict-Transport-Security, X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Content-Security-Policy, X-XSS-Protection: 0 (deprecated but harmless) to all responses.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-017",
+      "title": "Create frontend API client with JWT interceptor",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-004"],
+      "description": "HTTP client wrapper with JWT interceptor for automatic token attachment, 401 handling with token refresh, and request queue during refresh.",
+      "filesOwned": [
+        "src/frontend/src/shared/lib/api-client.ts"
+      ],
+      "acceptanceCriteria": [
+        "apiClient wraps fetch/axios with base URL configuration",
+        "Request interceptor adds Authorization: Bearer <access_token> header",
+        "Response interceptor detects 401, triggers token refresh",
+        "Queue mechanism: while refresh is in-flight, other 401 responses are queued and retried after refresh completes",
+        "If refresh fails, clear auth state and redirect to login",
+        "Attach Accept-Language header based on current locale"
+      ],
+      "dependencies": ["TASK-005"],
+      "contextFromOtherTasks": "Uses TokenPair and AuthError types from TASK-005. Will be consumed by TASK-019 (auth API hooks) and TASK-020 (admin API hooks).",
+      "codingPrompt": "Create src/frontend/src/shared/lib/api-client.ts. Use native fetch wrapped in a class or function-based API client (no external HTTP library to keep bundle small). Named export: apiClient. Features: 1) Base URL from env var VITE_API_URL. 2) Request interceptor: reads access token from memory (import from auth store), adds 'Authorization: Bearer <token>' header. Adds 'Accept-Language' header from document.documentElement.lang or stored preference. 3) Response handling: for 401 responses, attempt token refresh by calling POST /auth/refresh with the refresh token. While refresh is in flight, queue all other failing requests. On refresh success, retry queued requests with new token. On refresh failure, clear auth state and redirect to /login. 4) Helper methods: apiClient.get<T>(url, params?), apiClient.post<T>(url, body?), apiClient.patch<T>(url, body?), apiClient.delete<T>(url). 5) Error handling: parse error response body as AuthError type, throw typed errors. 6) No default export — named export only.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-018",
+      "title": "Create auth Zustand store",
+      "layer": "frontend-store",
+      "requirementRefs": ["REQ-AUTH-002", "REQ-AUTH-004"],
+      "description": "Zustand store for auth state: current user, tokens (access in memory, refresh in httpOnly cookie), permissions, authentication status.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/store/auth.store.ts"
+      ],
+      "acceptanceCriteria": [
+        "State: user (User | null), accessToken (string | null), isAuthenticated (computed), permissions (derived from role)",
+        "Actions: setAuth(user, tokens), clearAuth(), updateAccessToken(token)",
+        "Access token stored in memory only (not localStorage)",
+        "isAuthenticated derived from user !== null && accessToken !== null",
+        "Permissions computed from user.role using RolePermissionMap",
+        "hasPermission(permission) helper method"
+      ],
+      "dependencies": ["TASK-005"],
+      "contextFromOtherTasks": "Uses User, Role, TokenPair, Permission, RolePermissionMap types from TASK-005.",
+      "codingPrompt": "Create src/frontend/src/features/auth/store/auth.store.ts using Zustand. Named export: useAuthStore. Define interface AuthState: user: User | null, accessToken: string | null, refreshToken: string | null. Define interface AuthActions: setAuth: (user: User, tokens: TokenPair) => void, clearAuth: () => void, updateTokens: (tokens: TokenPair) => void, getPermissions: () => Permission[], hasPermission: (permission: Permission) => boolean, isAuthenticated: () => boolean. Create store with: 1) Initial state: user null, accessToken null, refreshToken null. 2) setAuth: sets user, accessToken, refreshToken. 3) clearAuth: resets all to null. 4) updateTokens: updates accessToken and refreshToken. 5) getPermissions: computes permissions from user.role using ROLE_PERMISSIONS map (define inline or import). 6) hasPermission: checks if permission is in getPermissions(). 7) isAuthenticated: returns user !== null && accessToken !== null. Define ROLE_PERMISSIONS map matching backend (from permissions.py). Named export only.",
+      "estimatedToolCalls": 3
+    },
+    {
+      "id": "TASK-019",
+      "title": "Create auth TanStack Query API hooks",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-003", "REQ-AUTH-005"],
+      "description": "TanStack Query hooks for all auth API calls: login, register, OTP, MFA, password reset, SSO, invitation validation.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/api/auth.api.ts"
+      ],
+      "acceptanceCriteria": [
+        "useLogin() mutation hook",
+        "useRegister() mutation hook",
+        "useVerifyOTP() mutation hook",
+        "useValidateInvitation(token) query hook",
+        "useRequestNewInvitation() mutation hook",
+        "useForgotPassword() mutation hook",
+        "useResetPassword() mutation hook",
+        "useMFASetup() mutation hook",
+        "useMFAVerify() mutation hook",
+        "useLogout() mutation hook",
+        "All hooks use apiClient from shared/lib",
+        "Mutation hooks update auth store on success where applicable"
+      ],
+      "dependencies": ["TASK-005", "TASK-017", "TASK-018"],
+      "contextFromOtherTasks": "Uses types from TASK-005, apiClient from TASK-017, useAuthStore from TASK-018.",
+      "codingPrompt": "Create src/frontend/src/features/auth/api/auth.api.ts with TanStack Query hooks. Import { useMutation, useQuery } from '@tanstack/react-query'. Import { apiClient } from '@/shared/lib/api-client'. Import types from '../types/auth.types'. Import { useAuthStore } from '../store/auth.store'. Named exports: 1) useLogin = () => useMutation({mutationFn: (data: LoginPayload) => apiClient.post<LoginResponse>('/auth/login', data), onSuccess: (data) => useAuthStore.getState().setAuth(data.user, {accessToken: data.accessToken, refreshToken: data.refreshToken, expiresIn: data.expiresIn})}). 2) useRegister = () => useMutation for POST /auth/register with RegisterPayload, onSuccess updates auth store. 3) useValidateInvitation = (token: string) => useQuery({queryKey: ['invitation', token], queryFn: () => apiClient.get<InvitationValidation>(`/auth/invitation/${token}`), enabled: !!token}). 4) useVerifyOTP = () => useMutation for POST /auth/verify-otp. 5) useRequestNewInvitation = () => useMutation for POST /auth/request-new-invitation. 6) useForgotPassword = () => useMutation for POST /auth/forgot-password. 7) useResetPassword = () => useMutation for POST /auth/reset-password. 8) useMFASetup = () => useMutation for POST /auth/mfa/setup. 9) useMFAVerify = () => useMutation for POST /auth/mfa/verify. 10) useLogout = () => useMutation for POST /auth/logout, onSuccess calls clearAuth(). All named exports, no defaults.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-020",
+      "title": "Create admin TanStack Query API hooks",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-007", "REQ-AUTH-008"],
+      "description": "TanStack Query hooks for user management and audit trail API calls.",
+      "filesOwned": [
+        "src/frontend/src/features/admin/api/admin.api.ts"
+      ],
+      "acceptanceCriteria": [
+        "useUsers(filters) query hook with pagination",
+        "useInviteUser() mutation hook",
+        "useBulkInvite() mutation hook (FormData for CSV)",
+        "useChangeRole() mutation hook",
+        "useDeactivateUser() mutation hook",
+        "useReactivateUser() mutation hook",
+        "useUserActivity(userId) query hook",
+        "useAuditTrail(filters) query hook with pagination",
+        "useExportAuditTrail() mutation hook returning CSV blob"
+      ],
+      "dependencies": ["TASK-006", "TASK-017"],
+      "contextFromOtherTasks": "Uses admin types from TASK-006, apiClient from TASK-017.",
+      "codingPrompt": "Create src/frontend/src/features/admin/api/admin.api.ts with TanStack Query hooks. Import from '@tanstack/react-query', apiClient, and admin types. Named exports: 1) useUsers = (filters?: {role?, organizationId?, isActive?, page?, pageSize?}) => useQuery({queryKey: ['users', filters], queryFn: () => apiClient.get<PaginatedResponse<UserListItem>>('/users', filters)}). 2) useInviteUser = () => useMutation for POST /users/invite with InvitePayload, onSuccess invalidates ['users'] query. 3) useBulkInvite = () => useMutation for POST /users/bulk-invite with FormData (CSV file), returns BulkInviteResult. 4) useChangeRole = () => useMutation for PATCH /users/{id}/role, invalidates ['users']. 5) useDeactivateUser = () => useMutation for PATCH /users/{id}/deactivate, invalidates ['users']. 6) useReactivateUser = () => useMutation for PATCH /users/{id}/reactivate, invalidates ['users']. 7) useUserActivity = (userId: string) => useQuery for GET /users/{id}/activity. 8) useAuditTrail = (filters: AuditLogFilter) => useQuery({queryKey: ['audit-trail', filters], queryFn: () => apiClient.get<PaginatedResponse<AuditLogEntry>>('/audit-trail', filters)}). 9) useExportAuditTrail = () => useMutation for GET /audit-trail/export that returns Blob for download. Named exports only.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-021",
+      "title": "Create shared auth hooks (useAuth, useSession)",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-002", "REQ-AUTH-006"],
+      "description": "Shared hooks for accessing auth context and managing session lifecycle.",
+      "filesOwned": [
+        "src/frontend/src/shared/hooks/use-auth.ts",
+        "src/frontend/src/features/auth/hooks/use-session.ts"
+      ],
+      "acceptanceCriteria": [
+        "useAuth() returns current user, role, permissions, organization context, isAuthenticated, hasPermission()",
+        "useSession() manages inactivity timer, auto-refresh, session expiry detection",
+        "useSession() shows session expiry warning before timeout",
+        "useSession() resets timer on user activity (mouse, keyboard, scroll)"
+      ],
+      "dependencies": ["TASK-005", "TASK-018"],
+      "contextFromOtherTasks": "Uses auth types from TASK-005, useAuthStore from TASK-018.",
+      "codingPrompt": "Create two files: 1) src/frontend/src/shared/hooks/use-auth.ts — export function useAuth() that wraps useAuthStore for convenience. Returns: { user, role: user?.role, organizationId: user?.organizationId, isAuthenticated: store.isAuthenticated(), permissions: store.getPermissions(), hasPermission: store.hasPermission, hasRole: (role: Role) => user?.role === role, hasRoleOrAbove: (role: Role) => ROLE_HIERARCHY[user?.role] >= ROLE_HIERARCHY[role] }. Define ROLE_HIERARCHY map matching backend. 2) src/frontend/src/features/auth/hooks/use-session.ts — export function useSession(timeoutMinutes = 30). Uses useEffect to: a) Set up activity listeners (mousemove, keydown, scroll, click) that reset an inactivity timer. b) Timer: after (timeoutMinutes - 2) minutes of inactivity, set showWarning=true. After timeoutMinutes, call logout and redirect to /login. c) On each activity event, call a debounced session extend (POST to backend every 5 min at most). d) Returns { showWarning: boolean, dismissWarning: () => void, remainingSeconds: number }. Use useRef for timers, useCallback for handlers. Clean up listeners on unmount.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-022",
+      "title": "Create invitation token hook",
+      "layer": "frontend-hook",
+      "requirementRefs": ["REQ-AUTH-001"],
+      "description": "Hook to parse and validate invitation token from URL parameters.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/hooks/use-invitation-token.ts"
+      ],
+      "acceptanceCriteria": [
+        "Extracts token from URL search params",
+        "Calls useValidateInvitation to check token validity",
+        "Returns { token, invitation, isLoading, isExpired, error }"
+      ],
+      "dependencies": ["TASK-005", "TASK-019"],
+      "contextFromOtherTasks": "Uses InvitationValidation type from TASK-005, useValidateInvitation from TASK-019.",
+      "codingPrompt": "Create src/frontend/src/features/auth/hooks/use-invitation-token.ts. Named export: useInvitationToken(). Uses useSearchParams (from react-router-dom) to extract 'token' param. Calls useValidateInvitation(token) from auth.api.ts. Returns object: { token: string | null, invitation: InvitationValidation | undefined, isLoading: boolean, isExpired: boolean (true if invitation exists but !valid), error: Error | null }. Handle case where token is missing (return nulls). This is a thin composition hook.",
+      "estimatedToolCalls": 3
+    },
+    {
+      "id": "TASK-023",
+      "title": "Create registration form and OTP components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-001"],
+      "description": "Presentational components for the registration flow: registration form with Zod validation and OTP verification input.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/components/registration-form.tsx",
+        "src/frontend/src/features/auth/components/otp-verification.tsx"
+      ],
+      "acceptanceCriteria": [
+        "RegistrationForm: inputs for name_ar, name_en, email (pre-filled, read-only from invitation), phone_sa (Saudi format), password with strength indicator",
+        "RegistrationForm: Zod schema validates all fields, including Saudi phone regex",
+        "RegistrationForm: Uses React Hook Form",
+        "RegistrationForm: Bilingual labels via useTranslation()",
+        "RegistrationForm: RTL-aware layout",
+        "OTPVerification: 6-digit input with auto-focus advance, paste support",
+        "OTPVerification: Countdown timer for resend (60s)",
+        "OTPVerification: Props: onVerify callback, onResend callback, isLoading"
+      ],
+      "dependencies": ["TASK-005"],
+      "contextFromOtherTasks": "Uses RegisterPayload type from TASK-005 for form values.",
+      "codingPrompt": "Create two components: 1) src/frontend/src/features/auth/components/registration-form.tsx — RegistrationFormProps: { email: string (pre-filled from invitation), onSubmit: (data: RegisterPayload) => void, isLoading: boolean }. Use React Hook Form + Zod resolver. Zod schema: nameAr (min 2, Arabic chars), nameEn (min 2), email (email), phoneSa (regex ^\\+966[0-9]{9}$), password (min 8, must contain uppercase, number, special char). Form fields with labels from useTranslation() — t('auth.register.nameAr'), etc. Email field pre-filled and readonly. Include PasswordStrength component inline (or import from TASK-025). Submit button with loading state. All Tailwind classes, RTL-aware (use rtl: prefix or logical properties). Named export only. 2) src/frontend/src/features/auth/components/otp-verification.tsx — OTPVerificationProps: { onVerify: (code: string) => void, onResend: () => void, isLoading: boolean, phoneNumber: string }. Renders 6 individual input boxes. Auto-focus next on digit entry. Support paste of 6-digit code. Countdown timer (60s) before resend is enabled. Bilingual via useTranslation(). Named export only.",
+      "estimatedToolCalls": 6
+    },
+    {
+      "id": "TASK-024",
+      "title": "Create login form and SSO button components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-003"],
+      "description": "Presentational components for login: email/password form and SSO provider buttons.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/components/login-form.tsx",
+        "src/frontend/src/features/auth/components/sso-buttons.tsx"
+      ],
+      "acceptanceCriteria": [
+        "LoginForm: email and password inputs with Zod validation",
+        "LoginForm: 'Forgot Password?' link",
+        "LoginForm: Bilingual, RTL-aware",
+        "LoginForm: Props: onSubmit, isLoading, error",
+        "SSOButtons: Azure AD and Google buttons with provider icons",
+        "SSOButtons: Props: onSSOLogin(provider), availableProviders"
+      ],
+      "dependencies": ["TASK-005"],
+      "contextFromOtherTasks": "Uses LoginPayload type from TASK-005.",
+      "codingPrompt": "Create two components: 1) src/frontend/src/features/auth/components/login-form.tsx — LoginFormProps: { onSubmit: (data: LoginPayload) => void, isLoading: boolean, error?: string }. React Hook Form + Zod: email (EmailStr), password (min 1). Inputs with labels from useTranslation() — t('auth.login.email'), t('auth.login.password'). Show error message if provided. 'Forgot password?' link to /forgot-password. Submit button with loading state. Tailwind, RTL-aware. Named export. 2) src/frontend/src/features/auth/components/sso-buttons.tsx — SSOButtonsProps: { onSSOLogin: (provider: 'azure_ad' | 'google') => void, availableProviders: string[] }. Renders buttons for each available provider with appropriate icons/logos. Divider text 'or' between form and SSO. Bilingual. Named export.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-025",
+      "title": "Create MFA, password strength, and session expired components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-003", "REQ-AUTH-005", "REQ-AUTH-006"],
+      "description": "Shared presentational components: MFA input, password strength indicator, session expired modal, account locked message.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/components/mfa-input.tsx",
+        "src/frontend/src/features/auth/components/password-strength.tsx",
+        "src/frontend/src/features/auth/components/session-expired-modal.tsx",
+        "src/frontend/src/features/auth/components/account-locked-message.tsx"
+      ],
+      "acceptanceCriteria": [
+        "MFAInput: 6-digit OTP input similar to OTP component but for MFA context",
+        "PasswordStrength: visual indicator showing strength level (weak/fair/strong/very strong) based on password policy",
+        "SessionExpiredModal: overlay modal with message and 'Log in again' button",
+        "AccountLockedMessage: countdown timer showing remaining lockout time"
+      ],
+      "dependencies": ["TASK-005"],
+      "contextFromOtherTasks": "Uses MFAVerifyPayload type from TASK-005.",
+      "codingPrompt": "Create four components: 1) src/frontend/src/features/auth/components/mfa-input.tsx — MFAInputProps: { onVerify: (code: string) => void, isLoading: boolean, error?: string }. 6-digit input (similar pattern to OTP). Label from useTranslation(): t('auth.mfa.enterCode'). Named export. 2) src/frontend/src/features/auth/components/password-strength.tsx — PasswordStrengthProps: { password: string }. Computes strength based on: length >= 8, has uppercase, has number, has special char. Shows colored bar (red/orange/yellow/green) and label (weak/fair/strong/very strong). Bilingual labels. Named export. 3) src/frontend/src/features/auth/components/session-expired-modal.tsx — SessionExpiredModalProps: { isOpen: boolean, onLogin: () => void }. Overlay modal with icon, message t('auth.session.expired'), and button to redirect to login. Named export. 4) src/frontend/src/features/auth/components/account-locked-message.tsx — AccountLockedMessageProps: { lockedUntil: Date }. Shows countdown timer until lockout expires. Message: t('auth.login.accountLocked'). Named export. All Tailwind, RTL-aware, bilingual.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-026",
+      "title": "Create role guard and permission guard components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-002"],
+      "description": "Route and element guard components for role-based and permission-based access control in the UI.",
+      "filesOwned": [
+        "src/frontend/src/shared/components/role-guard.tsx",
+        "src/frontend/src/shared/components/permission-guard.tsx"
+      ],
+      "acceptanceCriteria": [
+        "RoleGuard: wraps route, redirects to /unauthorized if user lacks required role",
+        "RoleGuard: Props: allowedRoles, children, fallback?",
+        "PermissionGuard: wraps UI elements, hides them if user lacks permission",
+        "PermissionGuard: Props: permission, children, fallback?"
+      ],
+      "dependencies": ["TASK-005", "TASK-021"],
+      "contextFromOtherTasks": "Uses Role, Permission types from TASK-005, useAuth hook from TASK-021.",
+      "codingPrompt": "Create two components: 1) src/frontend/src/shared/components/role-guard.tsx — RoleGuardProps: { allowedRoles: Role[], children: React.ReactNode, fallback?: React.ReactNode }. Uses useAuth() hook. If !isAuthenticated, redirect to /login (using Navigate from react-router-dom). If user.role not in allowedRoles AND not hasRoleOrAbove any of allowedRoles, render fallback or redirect to /unauthorized. Otherwise render children. Named export. 2) src/frontend/src/shared/components/permission-guard.tsx — PermissionGuardProps: { permission: Permission, children: React.ReactNode, fallback?: React.ReactNode }. Uses useAuth().hasPermission(permission). If true, render children. If false, render fallback or null (for hiding UI elements like buttons/tabs). Named export. Both components are presentational wrappers that delegate auth logic to useAuth hook.",
+      "estimatedToolCalls": 4
+    },
+    {
+      "id": "TASK-027",
+      "title": "Create admin user management components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-007"],
+      "description": "Presentational components for user management: user table, invite dialog, bulk invite dialog, activity log.",
+      "filesOwned": [
+        "src/frontend/src/features/admin/components/user-table.tsx",
+        "src/frontend/src/features/admin/components/invite-user-dialog.tsx",
+        "src/frontend/src/features/admin/components/bulk-invite-dialog.tsx",
+        "src/frontend/src/features/admin/components/user-activity-log.tsx"
+      ],
+      "acceptanceCriteria": [
+        "UserTable: sortable/filterable table with columns (name, email, role, org, status, last login, actions)",
+        "UserTable: action buttons for deactivate/reactivate/change role",
+        "InviteUserDialog: form with email, name (ar/en), role select, domain multi-select",
+        "BulkInviteDialog: CSV file upload with preview and validation results",
+        "UserActivityLog: timeline/table of user events"
+      ],
+      "dependencies": ["TASK-006"],
+      "contextFromOtherTasks": "Uses admin types from TASK-006.",
+      "codingPrompt": "Create four components: 1) src/frontend/src/features/admin/components/user-table.tsx — UserTableProps: { users: UserListItem[], onDeactivate: (id) => void, onReactivate: (id) => void, onChangeRole: (id, role) => void, onViewActivity: (id) => void, isLoading: boolean }. Renders table with columns: nameEn/nameAr (based on locale), email, role (badge), organization, status (active/inactive badge), last login (formatted date), actions dropdown. Sortable headers. Bilingual via useTranslation(). 2) src/frontend/src/features/admin/components/invite-user-dialog.tsx — InviteUserDialogProps: { isOpen, onClose, onInvite: (data: InvitePayload) => void, isLoading }. React Hook Form with email, nameAr, nameEn, role (select), domainIds (multi-select, shown only for ASSESSOR role). Zod validation. 3) src/frontend/src/features/admin/components/bulk-invite-dialog.tsx — BulkInviteDialogProps: { isOpen, onClose, onUpload: (file: File) => void, result?: BulkInviteResult, isLoading }. File input for CSV, shows template download link, preview validation results with per-row status. 4) src/frontend/src/features/admin/components/user-activity-log.tsx — UserActivityLogProps: { activities: UserActivityItem[], isLoading }. Timeline or table of events with timestamps and details. All named exports, Tailwind, RTL-aware, bilingual.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-028",
+      "title": "Create audit trail components",
+      "layer": "frontend-component",
+      "requirementRefs": ["REQ-AUTH-008"],
+      "description": "Presentational components for the audit trail viewer.",
+      "filesOwned": [
+        "src/frontend/src/features/admin/components/audit-table.tsx"
+      ],
+      "acceptanceCriteria": [
+        "AuditTable: paginated table with columns (timestamp, event type, user/email, IP, details)",
+        "AuditTable: filter controls (event type dropdown, date range picker, user search)",
+        "AuditTable: export button triggering CSV download",
+        "AuditTable: color-coded event types (errors in red, warnings in yellow, info in blue)"
+      ],
+      "dependencies": ["TASK-006"],
+      "contextFromOtherTasks": "Uses AuditLogEntry, AuditLogFilter types from TASK-006.",
+      "codingPrompt": "Create src/frontend/src/features/admin/components/audit-table.tsx — AuditTableProps: { entries: AuditLogEntry[], total: number, page: number, pageSize: number, onPageChange: (page) => void, onFilterChange: (filters: AuditLogFilter) => void, onExport: () => void, isLoading: boolean, isExporting: boolean }. Renders: 1) Filter bar at top with: event type select (multi-select or dropdown), date range inputs (from/to), email/user search input, organization filter (if Super Admin), apply/clear buttons. 2) Table with columns: created_at (formatted datetime), eventType (color-coded badge — LOGIN_FAILED/UNAUTHORIZED_ACCESS in red, LOGIN_SUCCESS in green, others in blue/gray), email, ipAddress, userAgent (truncated), details (expandable JSON). 3) Pagination controls at bottom. 4) Export CSV button that calls onExport. All Tailwind, RTL-aware, bilingual via useTranslation(). Named export.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-029",
+      "title": "Create registration and invitation-expired pages",
+      "layer": "frontend-page",
+      "requirementRefs": ["REQ-AUTH-001"],
+      "description": "Smart page components for registration flow and expired invitation handling.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/pages/register.tsx",
+        "src/frontend/src/features/auth/pages/invitation-expired.tsx"
+      ],
+      "acceptanceCriteria": [
+        "RegisterPage: validates invitation token, shows registration form, handles OTP flow, redirects on success",
+        "RegisterPage: multi-step — Step 1: form, Step 2: OTP verification",
+        "RegisterPage: shows loading state while validating invitation",
+        "RegisterPage: redirects to invitation-expired if token invalid",
+        "InvitationExpiredPage: shows expiry message in Arabic/English, 'Request New Invitation' button"
+      ],
+      "dependencies": ["TASK-019", "TASK-022", "TASK-023"],
+      "contextFromOtherTasks": "Uses useRegister, useVerifyOTP from TASK-019, useInvitationToken from TASK-022, RegistrationForm and OTPVerification from TASK-023.",
+      "codingPrompt": "Create two pages: 1) src/frontend/src/features/auth/pages/register.tsx — Named export: RegisterPage. Smart component. Uses useInvitationToken() to validate token from URL. If loading, show spinner. If expired/invalid, redirect to /invitation-expired?token=xxx. If valid, show RegistrationForm (pre-filled email from invitation). On form submit, call useRegister mutation. On success, show OTPVerification component for phone verification. On OTP success, redirect to dashboard. Handle errors with bilingual messages. Multi-step state: 'form' | 'otp' | 'complete'. useTranslation() for all text. 2) src/frontend/src/features/auth/pages/invitation-expired.tsx — Named export: InvitationExpiredPage. Shows localized message: t('auth.invitation.expired'). 'Request New Invitation' button that calls useRequestNewInvitation. On success, show confirmation message. Both pages: Tailwind, RTL-aware, centered card layout. Named exports only.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-030",
+      "title": "Create login, MFA, and SSO callback pages",
+      "layer": "frontend-page",
+      "requirementRefs": ["REQ-AUTH-003"],
+      "description": "Smart page components for the login flow: main login, MFA verification, SSO callback, MFA setup.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/pages/login.tsx",
+        "src/frontend/src/features/auth/pages/sso-callback.tsx",
+        "src/frontend/src/features/auth/pages/mfa-setup.tsx",
+        "src/frontend/src/features/auth/pages/mfa-verify.tsx"
+      ],
+      "acceptanceCriteria": [
+        "LoginPage: renders LoginForm + SSOButtons, handles login mutation, redirects on MFA requirement",
+        "LoginPage: shows AccountLockedMessage when account is locked",
+        "SSOCallbackPage: handles OAuth redirect, exchanges code for tokens",
+        "MFASetupPage: shows QR code for authenticator app setup, verify first code",
+        "MFAVerifyPage: 6-digit input during login when MFA is required"
+      ],
+      "dependencies": ["TASK-019", "TASK-024", "TASK-025"],
+      "contextFromOtherTasks": "Uses useLogin, useMFASetup, useMFAVerify from TASK-019, LoginForm/SSOButtons from TASK-024, MFAInput/AccountLockedMessage from TASK-025.",
+      "codingPrompt": "Create four pages: 1) src/frontend/src/features/auth/pages/login.tsx — LoginPage. Uses useLogin mutation. Renders LoginForm and SSOButtons. On login success: if mfaRequired, redirect to /mfa-verify with temp token in state. If not, store auth and redirect to dashboard. If error is AccountLocked, show AccountLockedMessage with lockedUntil. 2) src/frontend/src/features/auth/pages/sso-callback.tsx — SSOCallbackPage. Extracts code and state from URL params. Calls SSO callback endpoint. On success, stores auth and redirects. On error, redirects to login with error message. 3) src/frontend/src/features/auth/pages/mfa-setup.tsx — MFASetupPage (authenticated). Calls useMFASetup to get QR URI. Shows QR code (using a QR library or img with qr_uri). User enters first verification code to confirm setup. On verify success, show success message. 4) src/frontend/src/features/auth/pages/mfa-verify.tsx — MFAVerifyPage. Receives mfaTempToken from login redirect (via location state or URL param). Renders MFAInput. On verify, calls useMFAVerify. On success, stores auth and redirects to dashboard. All: Tailwind, RTL-aware, centered card layout, bilingual. Named exports only.",
+      "estimatedToolCalls": 8
+    },
+    {
+      "id": "TASK-031",
+      "title": "Create password management pages",
+      "layer": "frontend-page",
+      "requirementRefs": ["REQ-AUTH-005"],
+      "description": "Smart page components for forgot password and reset password flows.",
+      "filesOwned": [
+        "src/frontend/src/features/auth/pages/forgot-password.tsx",
+        "src/frontend/src/features/auth/pages/reset-password.tsx"
+      ],
+      "acceptanceCriteria": [
+        "ForgotPasswordPage: email input form, always shows success message (prevent enumeration)",
+        "ResetPasswordPage: validates token from URL, new password form with strength indicator",
+        "ResetPasswordPage: shows expiry message if token invalid",
+        "ResetPasswordPage: redirects to login on success"
+      ],
+      "dependencies": ["TASK-019", "TASK-025"],
+      "contextFromOtherTasks": "Uses useForgotPassword, useResetPassword from TASK-019, PasswordStrength from TASK-025.",
+      "codingPrompt": "Create two pages: 1) src/frontend/src/features/auth/pages/forgot-password.tsx — ForgotPasswordPage. Form with email input. On submit, calls useForgotPassword mutation. ALWAYS shows success message regardless of whether email exists (security: prevent email enumeration). Message: t('auth.forgotPassword.successMessage'). Link back to login. 2) src/frontend/src/features/auth/pages/reset-password.tsx — ResetPasswordPage. Extracts token from URL search params. If no token, redirect to /forgot-password. Form: new password input with PasswordStrength component, confirm password input. Zod validation: password matches policy, passwords match. On submit, calls useResetPassword. On success, show message and redirect to /login after 3s. On token expired error, show expiry message with link to /forgot-password. Both: Tailwind, RTL-aware, centered card layout, bilingual. Named exports only.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-032",
+      "title": "Create user management page",
+      "layer": "frontend-page",
+      "requirementRefs": ["REQ-AUTH-007"],
+      "description": "Smart page component for the admin user management view.",
+      "filesOwned": [
+        "src/frontend/src/features/admin/pages/user-management.tsx"
+      ],
+      "acceptanceCriteria": [
+        "UserManagementPage: renders UserTable with data from useUsers",
+        "UserManagementPage: invite button opens InviteUserDialog",
+        "UserManagementPage: bulk invite button opens BulkInviteDialog",
+        "UserManagementPage: handles deactivate/reactivate/role change mutations",
+        "UserManagementPage: filters by role, status, organization",
+        "UserManagementPage: Client Admin sees only their org's users"
+      ],
+      "dependencies": ["TASK-020", "TASK-021", "TASK-027"],
+      "contextFromOtherTasks": "Uses admin API hooks from TASK-020, useAuth from TASK-021, admin components from TASK-027.",
+      "codingPrompt": "Create src/frontend/src/features/admin/pages/user-management.tsx — Named export: UserManagementPage. Smart page component. Uses useAuth() to determine current user role and org scope. Uses useUsers(filters) for data fetching. State: filter values (role, status, orgId), dialog open states. Renders: 1) Page header with title t('admin.users.title') and action buttons (Invite User, Bulk Invite). 2) Filter bar (role dropdown, status toggle, org select — org select only visible to Super Admin). 3) UserTable with data, passing mutation callbacks for deactivate/reactivate/changeRole. 4) InviteUserDialog controlled by state. On invite, calls useInviteUser mutation. 5) BulkInviteDialog controlled by state. On upload, calls useBulkInvite mutation. 6) Confirmation dialog before destructive actions (deactivate, role change). Client Admin: auto-filter to their organization, hide org filter. Super Admin: see all orgs, can filter. Tailwind, RTL-aware, bilingual. Named export.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-033",
+      "title": "Create audit trail and privacy settings pages",
+      "layer": "frontend-page",
+      "requirementRefs": ["REQ-AUTH-008", "REQ-AUTH-010"],
+      "description": "Smart page components for audit trail viewer and user privacy settings.",
+      "filesOwned": [
+        "src/frontend/src/features/admin/pages/audit-trail.tsx",
+        "src/frontend/src/features/auth/pages/privacy-settings.tsx"
+      ],
+      "acceptanceCriteria": [
+        "AuditTrailPage: renders AuditTable with data from useAuditTrail",
+        "AuditTrailPage: filter controls connected to API query params",
+        "AuditTrailPage: export button triggers CSV download",
+        "AuditTrailPage: Super Admin only (guarded by role)",
+        "PrivacySettingsPage: data export request button",
+        "PrivacySettingsPage: account deletion request with confirmation"
+      ],
+      "dependencies": ["TASK-019", "TASK-020", "TASK-021", "TASK-028"],
+      "contextFromOtherTasks": "Uses admin API hooks from TASK-020, useAuth from TASK-021, AuditTable from TASK-028, auth API hooks from TASK-019 for data export/deletion.",
+      "codingPrompt": "Create two pages: 1) src/frontend/src/features/admin/pages/audit-trail.tsx — Named export: AuditTrailPage. Super Admin only. Uses useAuditTrail(filters) for data. State: AuditLogFilter values. Renders AuditTable component, passing data and filter handlers. Export button calls useExportAuditTrail mutation, triggers browser download of resulting CSV blob. Page title: t('admin.auditTrail.title'). 2) src/frontend/src/features/auth/pages/privacy-settings.tsx — Named export: PrivacySettingsPage. Authenticated user. Section 1: Data Export — button to request export of personal data, calls POST /auth/request-data-export, shows confirmation message. Section 2: Account Deletion — button with double confirmation (dialog with warning text), calls POST /auth/request-deletion, shows 'Request submitted, will be processed within 30 days' message. Both bilingual, explain PDPL rights in Arabic/English. Tailwind, RTL-aware. Named exports.",
+      "estimatedToolCalls": 5
+    },
+    {
+      "id": "TASK-034",
+      "title": "Create app entry point, router, translations, and seed script",
+      "layer": "infrastructure",
+      "requirementRefs": ["REQ-AUTH-001", "REQ-AUTH-002", "REQ-AUTH-003"],
+      "description": "Wire everything together: FastAPI main app with middleware, frontend router with auth route definitions, i18n translation files for auth, and database seed script for initial Super Admin.",
+      "filesOwned": [
+        "src/backend/main.py",
+        "src/backend/app/auth/__init__.py",
+        "src/backend/app/common/__init__.py",
+        "src/backend/scripts/seed_admin.py",
+        "src/frontend/src/router.tsx",
+        "src/frontend/src/i18n/ar.json",
+        "src/frontend/src/i18n/en.json"
+      ],
+      "acceptanceCriteria": [
+        "FastAPI app includes auth_router and users_router",
+        "All middleware registered: TenantIsolation, SessionActivity, RateLimit, SecurityHeaders",
+        "Global exception handlers registered",
+        "CORS configured",
+        "Frontend router defines all auth routes with role guards",
+        "Translation files include all auth-related keys in Arabic and English",
+        "Seed script creates initial Super Admin user via CLI"
+      ],
+      "dependencies": ["TASK-015", "TASK-016", "TASK-029", "TASK-030", "TASK-031", "TASK-032", "TASK-033"],
+      "contextFromOtherTasks": "Imports routers from TASK-015, middleware from TASK-016, and references all page components from TASK-029 through TASK-033 for route definitions.",
+      "codingPrompt": "Create multiple integration files: 1) src/backend/main.py — FastAPI app factory. Import and include auth_router, users_router. Register middleware in order: SecurityHeadersMiddleware, RateLimitMiddleware, SessionActivityMiddleware, TenantIsolationMiddleware. Register global exception handlers from common/exceptions.py. Configure CORS from Settings. Add startup/shutdown events for DB and Redis connections. 2) src/backend/app/auth/__init__.py and src/backend/app/common/__init__.py — Package init files. 3) src/backend/scripts/seed_admin.py — CLI script (async) that creates initial Super Admin user. Prompts for email, name, password (or accepts CLI args). Hashes password, creates User with SUPER_ADMIN role, org_id=None. Uses asyncio.run(). 4) src/frontend/src/router.tsx — React Router route definitions. Public routes: /login, /register, /invitation-expired, /forgot-password, /reset-password, /sso/callback, /mfa-verify. Authenticated routes wrapped in RoleGuard: /mfa-setup (any), /privacy-settings (any), /admin/users (SUPER_ADMIN, CLIENT_ADMIN), /admin/audit-trail (SUPER_ADMIN). Lazy load pages with React.lazy. 5) src/frontend/src/i18n/ar.json — Arabic translations for ALL auth UI strings. Namespace: auth.login.*, auth.register.*, auth.forgotPassword.*, auth.resetPassword.*, auth.mfa.*, auth.session.*, auth.invitation.*, admin.users.*, admin.auditTrail.*. 6) src/frontend/src/i18n/en.json — English translations matching ar.json keys. Include form labels, buttons, error messages, success messages, validation messages.",
+      "estimatedToolCalls": 15
+    }
+  ],
+  "fileOwnershipMatrix": {
+    "src/backend/app/auth/models.py": "TASK-001",
+    "src/backend/alembic/versions/001_create_auth_tables.py": "TASK-001",
+    "src/backend/app/common/models.py": "TASK-002",
+    "src/backend/alembic/versions/002_create_audit_logs.py": "TASK-002",
+    "src/backend/config.py": "TASK-003",
+    "src/backend/database.py": "TASK-003",
+    "src/backend/alembic/alembic.ini": "TASK-003",
+    "src/backend/alembic/env.py": "TASK-003",
+    "src/backend/app/common/exceptions.py": "TASK-004",
+    "src/backend/app/auth/exceptions.py": "TASK-004",
+    "src/frontend/src/features/auth/types/auth.types.ts": "TASK-005",
+    "src/frontend/src/features/admin/types/admin.types.ts": "TASK-006",
+    "src/backend/app/auth/jwt_service.py": "TASK-007",
+    "src/backend/app/auth/password_service.py": "TASK-008",
+    "src/backend/app/auth/invitation_service.py": "TASK-009",
+    "src/backend/app/auth/service.py": "TASK-010",
+    "src/backend/app/auth/session_service.py": "TASK-011",
+    "src/backend/app/common/audit_service.py": "TASK-012",
+    "src/backend/app/auth/permissions.py": "TASK-013",
+    "src/backend/app/auth/sso_service.py": "TASK-013",
+    "src/backend/app/auth/mfa_service.py": "TASK-013",
+    "src/backend/app/auth/schemas.py": "TASK-014",
+    "src/backend/app/common/schemas.py": "TASK-014",
+    "src/backend/app/auth/router.py": "TASK-015",
+    "src/backend/app/auth/dependencies.py": "TASK-016",
+    "src/backend/app/common/middleware.py": "TASK-016",
+    "src/frontend/src/shared/lib/api-client.ts": "TASK-017",
+    "src/frontend/src/features/auth/store/auth.store.ts": "TASK-018",
+    "src/frontend/src/features/auth/api/auth.api.ts": "TASK-019",
+    "src/frontend/src/features/admin/api/admin.api.ts": "TASK-020",
+    "src/frontend/src/shared/hooks/use-auth.ts": "TASK-021",
+    "src/frontend/src/features/auth/hooks/use-session.ts": "TASK-021",
+    "src/frontend/src/features/auth/hooks/use-invitation-token.ts": "TASK-022",
+    "src/frontend/src/features/auth/components/registration-form.tsx": "TASK-023",
+    "src/frontend/src/features/auth/components/otp-verification.tsx": "TASK-023",
+    "src/frontend/src/features/auth/components/login-form.tsx": "TASK-024",
+    "src/frontend/src/features/auth/components/sso-buttons.tsx": "TASK-024",
+    "src/frontend/src/features/auth/components/mfa-input.tsx": "TASK-025",
+    "src/frontend/src/features/auth/components/password-strength.tsx": "TASK-025",
+    "src/frontend/src/features/auth/components/session-expired-modal.tsx": "TASK-025",
+    "src/frontend/src/features/auth/components/account-locked-message.tsx": "TASK-025",
+    "src/frontend/src/shared/components/role-guard.tsx": "TASK-026",
+    "src/frontend/src/shared/components/permission-guard.tsx": "TASK-026",
+    "src/frontend/src/features/admin/components/user-table.tsx": "TASK-027",
+    "src/frontend/src/features/admin/components/invite-user-dialog.tsx": "TASK-027",
+    "src/frontend/src/features/admin/components/bulk-invite-dialog.tsx": "TASK-027",
+    "src/frontend/src/features/admin/components/user-activity-log.tsx": "TASK-027",
+    "src/frontend/src/features/admin/components/audit-table.tsx": "TASK-028",
+    "src/frontend/src/features/auth/pages/register.tsx": "TASK-029",
+    "src/frontend/src/features/auth/pages/invitation-expired.tsx": "TASK-029",
+    "src/frontend/src/features/auth/pages/login.tsx": "TASK-030",
+    "src/frontend/src/features/auth/pages/sso-callback.tsx": "TASK-030",
+    "src/frontend/src/features/auth/pages/mfa-setup.tsx": "TASK-030",
+    "src/frontend/src/features/auth/pages/mfa-verify.tsx": "TASK-030",
+    "src/frontend/src/features/auth/pages/forgot-password.tsx": "TASK-031",
+    "src/frontend/src/features/auth/pages/reset-password.tsx": "TASK-031",
+    "src/frontend/src/features/admin/pages/user-management.tsx": "TASK-032",
+    "src/frontend/src/features/admin/pages/audit-trail.tsx": "TASK-033",
+    "src/frontend/src/features/auth/pages/privacy-settings.tsx": "TASK-033",
+    "src/backend/main.py": "TASK-034",
+    "src/backend/app/auth/__init__.py": "TASK-034",
+    "src/backend/app/common/__init__.py": "TASK-034",
+    "src/backend/scripts/seed_admin.py": "TASK-034",
+    "src/frontend/src/router.tsx": "TASK-034",
+    "src/frontend/src/i18n/ar.json": "TASK-034",
+    "src/frontend/src/i18n/en.json": "TASK-034"
+  },
+  "parallelismSummary": {
+    "phase1_maxParallelAgents": 6,
+    "phase2_maxParallelAgents": 7,
+    "phase3_maxParallelAgents": 3,
+    "phase4_maxParallelAgents": 6,
+    "phase5_maxParallelAgents": 6,
+    "phase6_maxParallelAgents": 5,
+    "phase7_maxParallelAgents": 1,
+    "totalPhases": 7,
+    "criticalPath": "TASK-001 → TASK-010 → TASK-015 → TASK-034"
+  },
+  "notes": [
+    "TASK-001 and TASK-002 both create models but in separate modules (auth/ vs common/) to avoid file conflicts",
+    "TASK-013 owns 3 files (permissions, sso_service, mfa_service) since they are closely related and low-complexity individually",
+    "TASK-034 is the only sequential task — it wires everything together and must run last",
+    "All open questions (OQ-AUTH-001 through OQ-AUTH-008) are resolved using their suggestedDefault values",
+    "Backend tests are NOT included as separate tasks here — they should be split into a follow-up test-writing task manifest after implementation",
+    "Frontend tests are similarly deferred to a test-writing phase"
+  ]
+}

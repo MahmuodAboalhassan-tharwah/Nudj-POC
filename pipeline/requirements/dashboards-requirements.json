@@ -1,0 +1,51 @@
+{
+    "feature": "Dashboards",
+    "description": "Implement dashboards for different user roles (Super Admin, Client Admin) to visualize assessment progress and results.",
+    "functionalRequirements": [
+        {
+            "id": "DASH-001",
+            "description": "As a Super Admin, I want to see a Portfolio Dashboard with aggregate metrics across all organizations.",
+            "acceptanceCriteria": [
+                "Total number of organizations",
+                "Total active assessments",
+                "Average maturity score across all orgs",
+                "Recent activity feed"
+            ]
+        },
+        {
+            "id": "DASH-002",
+            "description": "As a Client Admin, I want to see an Organization Dashboard with my organization's specific metrics.",
+            "acceptanceCriteria": [
+                "Current assessment status and progress",
+                "Latest assessment score",
+                "Radar chart comparing domains",
+                "Action items or pending tasks"
+            ]
+        },
+        {
+            "id": "DASH-003",
+            "description": "As an Assessor, I want to see my assigned tasks and deadlines.",
+            "acceptanceCriteria": [
+                "List of assigned domains/elements",
+                "Due dates",
+                "Completion status"
+            ]
+        }
+    ],
+    "componentMappings": {
+        "backend": [
+            "src/backend/app/dashboards/router.py",
+            "src/backend/app/dashboards/service.py",
+            "src/backend/app/dashboards/schemas.py"
+        ],
+        "frontend": [
+            "src/frontend/src/features/dashboards/components/stats-card.tsx",
+            "src/frontend/src/features/dashboards/components/assessment-trend-chart.tsx",
+            "src/frontend/src/features/dashboards/components/assessment-distribution-chart.tsx",
+            "src/frontend/src/features/dashboards/pages/super-admin-dashboard.tsx",
+            "src/frontend/src/features/dashboards/pages/client-dashboard.tsx",
+            "src/frontend/src/features/dashboards/api/dashboards.api.ts",
+            "src/frontend/src/features/dashboards/types/dashboard.types.ts"
+        ]
+    }
+}

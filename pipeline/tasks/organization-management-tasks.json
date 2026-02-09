@@ -1,0 +1,36 @@
+[
+    {
+        "id": "TASK-201",
+        "title": "Backend: Organization Model & Migration",
+        "description": "Create Organization model in `app/organizations/models.py` and generate Alembic migration.",
+        "dependencies": [],
+        "status": "pending"
+    },
+    {
+        "id": "TASK-202",
+        "title": "Backend: Organization Service & API",
+        "description": "Implement CRUD logic in `service.py` and endpoints in `router.py`. Register router in `main.py`.",
+        "dependencies": [
+            "TASK-201"
+        ],
+        "status": "pending"
+    },
+    {
+        "id": "TASK-203",
+        "title": "Frontend: Organization Types & API Hooks",
+        "description": "Define TypeScript interfaces and React Query hooks for organization management.",
+        "dependencies": [
+            "TASK-202"
+        ],
+        "status": "pending"
+    },
+    {
+        "id": "TASK-204",
+        "title": "Frontend: Organization List & Management UI",
+        "description": "Create Organization List page (for Super Admins) and Edit/Create forms.",
+        "dependencies": [
+            "TASK-203"
+        ],
+        "status": "pending"
+    }
+]

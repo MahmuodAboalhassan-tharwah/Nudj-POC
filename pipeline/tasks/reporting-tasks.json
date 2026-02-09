@@ -1,0 +1,68 @@
+{
+    "feature": "Reporting",
+    "sourceRequirements": "pipeline/requirements/reporting-requirements.json",
+    "createdAt": "2026-02-08T21:30:00Z",
+    "totalTasks": 4,
+    "executionPlan": {
+        "phase1_backend": {
+            "label": "Backend Implementation",
+            "parallel": [
+                "TASK-401",
+                "TASK-402",
+                "TASK-403"
+            ]
+        },
+        "phase2_frontend": {
+            "label": "Frontend Integration",
+            "parallel": [
+                "TASK-404"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "id": "TASK-401",
+            "title": "Backend: Reporting Service Structure",
+            "layer": "backend-service",
+            "description": "Set up the reporting service structure and data fetching logic.",
+            "filesOwned": [
+                "src/backend/app/reports/service.py",
+                "src/backend/app/reports/schemas.py"
+            ],
+            "codingPrompt": "Create ReportingService. Add method `get_assessment_data(assessment_id)` to fetch all necessary data (Assessment, Organization, Domains, Elements) structured for the report."
+        },
+        {
+            "id": "TASK-402",
+            "title": "Backend: PDF Generation Logic",
+            "layer": "backend-logic",
+            "description": "Implement HTML to PDF conversion using Jinja2 templates and a PDF library (e.g., xhtml2pdf or weasyprint).",
+            "filesOwned": [
+                "src/backend/app/reports/generator.py",
+                "src/backend/app/reports/templates/report.html",
+                "src/backend/app/reports/templates/styles.css"
+            ],
+            "codingPrompt": "Create a `PDFGenerator` class. Use Jinja2 to render `report.html` with assessment data. Use `xhtml2pdf` (pisa) to convert HTML to PDF bytes. Ensure Arabic text support (font handling)."
+        },
+        {
+            "id": "TASK-403",
+            "title": "Backend: Reporting API Endpoint",
+            "layer": "backend-api",
+            "description": "Expose the report generation via an API endpoint.",
+            "filesOwned": [
+                "src/backend/app/reports/router.py"
+            ],
+            "codingPrompt": "Create `router.py` with `GET /assessments/{id}/report`. It should call ReportingService/PDFGenerator and return a StreamingResponse with media_type='application/pdf'."
+        },
+        {
+            "id": "TASK-404",
+            "title": "Frontend: Report Download Integration",
+            "layer": "frontend-component",
+            "description": "Add a download button to the Assessment Detail page.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/download-report-button.tsx",
+                "src/frontend/src/features/assessments/pages/assessment-detail-page.tsx"
+            ],
+            "codingPrompt": "Create `DownloadReportButton` component that calls the API and triggers a file download. Integrate it into `AssessmentDetailPage` header, visible only when status is 'completed'."
+        }
+    ]
+}

@@ -1,0 +1,188 @@
+{
+    "common": {
+        "email": "البريد الإلكتروني",
+        "password": "كلمة المرور",
+        "name": "الاسم",
+        "role": "الدور",
+        "status": "الحالة",
+        "actions": "الإجراءات",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "send": "إرسال",
+        "search": "بحث...",
+        "export": "تصدير",
+        "dashboard": "لوحة القيادة",
+        "users": "المستخدمين",
+        "auditLogs": "سجلات التدقيق",
+        "organizations": "المنظمات",
+        "logout": "تسجيل الخروج",
+        "overallScore": "الدرجة الكلية",
+        "deadline": "الموعد النهائي",
+        "created": "تاريخ الإنشاء",
+        "loading": "جاري التحميل...",
+        "error": "خطأ"
+    },
+    "auth": {
+        "login": {
+            "title": "مرحباً بعودتك",
+            "subtitle": "قم بتسجيل الدخول للوصول إلى لوحة القيادة",
+            "submit": "تسجيل الدخول",
+            "email": "البريد الإلكتروني",
+            "password": "كلمة المرور"
+        },
+        "register": {
+            "title": "إنشاء حساب",
+            "submit": "تسجيل"
+        }
+    },
+    "assessments": {
+        "title": "التقييمات",
+        "details": "تفاصيل التقييم",
+        "new": "تقييم جديد",
+        "create": "بدء التقييم",
+        "domains": "المجالات",
+        "score": "النتيجة",
+        "findings": "النتائج والأدلة",
+        "discussion": "المناقشة",
+        "delegate": "تفويض المهام",
+        "assignedTo": "مكلف إلى",
+        "noDelegations": "لا توجد تفويضات نشطة بعد.",
+        "errorLoading": "فشل تحميل تفاصيل التقييم.",
+        "element": "عنصر",
+        "frameworkElement": "عنصر الإطار",
+        "maturityLevel": "مستوى النضج",
+        "evidenceDocumentation": "الأدلة والوثائق",
+        "analysisObservations": "التحليل والملاحظات",
+        "saveResponse": "حفظ الإجابة",
+        "saving": "جاري الحفظ...",
+        "teamDiscussion": "مناقشة الفريق",
+        "collaborateOnFindings": "التعاون في النتائج",
+        "placeholderAnalysis": "تقديم سياق لمستوى النضج المختار...",
+        "saveFirstToDiscuss": "يرجى حفظ إجابتك أولاً لبدء المناقشة.",
+        "uploading": "جاري الرفع...",
+        "uploadEvidence": "رفع دليل",
+        "status": {
+            "DRAFT": "مسودة",
+            "IN_PROGRESS": "قيد التنفيذ",
+            "UNDER_REVIEW": "تحت المراجعة",
+            "REVISION_REQUESTED": "مراجعة مطلوبة",
+            "COMPLETED": "مكتمل",
+            "ARCHIVED": "مؤرشف"
+        },
+        "domainNames": {
+            "1": "استراتيجية الموارد البشرية",
+            "2": "تخطيط القوى العاملة",
+            "3": "استقطاب الكفاءات",
+            "4": "إدارة الأداء",
+            "5": "التعلم والتطوير",
+            "6": "المكافآت الإجمالية",
+            "7": "علاقات الموظفين",
+            "8": "تقنية الموارد البشرية",
+            "9": "تحليلات الموارد البشرية"
+        },
+        "maturityLevels": {
+            "levelPrefix": "المستوى",
+            "1": {
+                "label": "بدائي",
+                "description": "عمليات غير منظمة، رد فعلية"
+            },
+            "2": {
+                "label": "محدد",
+                "description": "عمليات موثقة"
+            },
+            "3": {
+                "label": "مدار",
+                "description": "عمليات مقاسة ومسيطر عليها"
+            },
+            "4": {
+                "label": "محسن",
+                "description": "تحسين مستمر"
+            }
+        },
+        "domainDescription": "يتتبع التقدم لهذا المجال المحدد من التقييم.",
+        "selectDomain": "يرجى اختيار مجال من القائمة الجانبية لعرض العناصر.",
+        "list": {
+            "title": "التقييمات",
+            "noAssessments": "لم يتم العثور على تقييمات.",
+            "createOne": "إنشاء تقييم؟",
+            "score": "النتيجة",
+            "deadline": "الموعد النهائي",
+            "viewDetails": "عرض التفاصيل",
+            "created": "تم الإنشاء",
+            "failed": "فشل تحميل التقييمات"
+        },
+        "delegation": {
+            "title": "تفويض التقييم",
+            "description": "قم بتعيين مجالات محددة أو التقييم بأكمله لأعضاء الفريق.",
+            "teamMember": "عضو الفريق",
+            "selectUser": "اختر مستخدماً",
+            "scope": "النطاق",
+            "selectScope": "اختر النطاق",
+            "wholeAssessment": "التقييم بأكمله",
+            "domainPrefix": "مجال",
+            "notes": "ملاحظات التعليمات (اختياري)",
+            "notesPlaceholder": "قدم سياقاً أو تعليمات لعضو الفريق هذا...",
+            "assignTask": "تعيين المهمة",
+            "delegating": "جاري التفويض...",
+            "currentAssignments": "التكليفات الحالية",
+            "noDelegations": "لا توجد تفويضات نشطة بعد.",
+            "success": "تم تفويض المهمة بنجاح",
+            "error": "فشل تفويض المهمة",
+            "revokeSuccess": "تم إلغاء التفويض",
+            "revokeError": "فشل إلغاء التفويض",
+            "assignedOn": "تم التعيين في",
+            "user": "مستخدم",
+            "assessment": "تقييم",
+            "validation": {
+                "selectUser": "يرجى اختيار مستخدم",
+                "notesTooLong": "الملاحظات طويلة جداً"
+            }
+        },
+        "createDialog": {
+            "title": "إنشاء تقييم جديد",
+            "description": "ابدأ تقييماً جديداً للنضج لمؤسستك.",
+            "deadline": "الموعد النهائي (اختياري)",
+            "pickDate": "اختر تاريخاً",
+            "creating": "جاري الإنشاء...",
+            "submit": "إنشاء تقييم"
+        }
+    },
+    "comments": {
+        "placeholder": "أضف إلى المناقشة...",
+        "submit": "تعليق",
+        "noComments": "لا توجد تعليقات بعد",
+        "beFirst": "كن أول من يشارك ملاحظاته.",
+        "reply": "رد",
+        "writePlaceholder": "اكتب تعليقاً...",
+        "post": "نشر",
+        "replyTo": "الرد على",
+        "replies": "ردود",
+        "replySingular": "رد"
+    },
+    "reports": {
+        "download": "تنزيل التقرير",
+        "generating": "جاري التوليد...",
+        "error": "فشل تنزيل التقرير"
+    },
+    "admin": {
+        "users": {
+            "title": "إدارة المستخدمين",
+            "invite": "دعوة مستخدم"
+        },
+        "organizations": {
+            "title": "إدارة المنظمات",
+            "new": "منظمة جديدة"
+        },
+        "framework": {
+            "title": "تكوين الإطار",
+            "description": "إدارة الأوزان والإعدادات لكل مجال من مجالات التقييم.",
+            "domainsTitle": "مجالات التقييم",
+            "domainsDescription": "تعديل الوزن الافتراضي لكل مجال. تؤثر الأوزان على حساب درجة النضج الإجمالية.",
+            "domainId": "المعرف",
+            "domainName": "اسم المجال",
+            "weight": "الوزن",
+            "successUpdate": "تم تحديث وزن المجال بنجاح",
+            "errorUpdate": "فشل تحديث وزن المجال"
+        }
+    }
+}

@@ -1,0 +1,65 @@
+{
+    "feature": "Dashboards",
+    "sourceRequirements": "pipeline/requirements/dashboards-requirements.json",
+    "createdAt": "2026-02-08T21:15:00Z",
+    "totalTasks": 3,
+    "executionPlan": {
+        "phase1_backend": {
+            "label": "Backend Services & API",
+            "parallel": [
+                "TASK-301"
+            ]
+        },
+        "phase2_frontend_components": {
+            "label": "Frontend Components",
+            "parallel": [
+                "TASK-302"
+            ]
+        },
+        "phase3_frontend_pages": {
+            "label": "Frontend Pages",
+            "parallel": [
+                "TASK-303"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "id": "TASK-301",
+            "title": "Backend: Dashboard Services & API",
+            "layer": "backend-api",
+            "description": "Implement dashboard service to aggregate data and API endpoints.",
+            "filesOwned": [
+                "src/backend/app/dashboards/router.py",
+                "src/backend/app/dashboards/service.py",
+                "src/backend/app/dashboards/schemas.py"
+            ],
+            "codingPrompt": "Create DashboardService with methods: get_portfolio_stats (super admin), get_org_stats (client admin). Create Router with endpoints /dashboards/portfolio and /dashboards/organization/{id}."
+        },
+        {
+            "id": "TASK-302",
+            "title": "Frontend: Dashboard Components & Layouts",
+            "layer": "frontend-component",
+            "description": "Create reusable dashboard components like StatsCard and Charts.",
+            "filesOwned": [
+                "src/frontend/src/features/dashboards/components/stats-card.tsx",
+                "src/frontend/src/features/dashboards/components/assessment-trend-chart.tsx",
+                "src/frontend/src/features/dashboards/components/assessment-distribution-chart.tsx",
+                "src/frontend/src/features/dashboards/types/dashboard.types.ts",
+                "src/frontend/src/features/dashboards/api/dashboards.api.ts"
+            ],
+            "codingPrompt": "Create StatsCard component. Create charts using Recharts (or similar). Define types and API hooks."
+        },
+        {
+            "id": "TASK-303",
+            "title": "Frontend: Dashboard Pages",
+            "layer": "frontend-page",
+            "description": "Implement the main dashboard pages for Super Admin and Client Admin.",
+            "filesOwned": [
+                "src/frontend/src/features/dashboards/pages/super-admin-dashboard.tsx",
+                "src/frontend/src/features/dashboards/pages/client-dashboard.tsx"
+            ],
+            "codingPrompt": "Create SuperAdminDashboard and ClientDashboard pages using the components and API hooks."
+        }
+    ]
+}

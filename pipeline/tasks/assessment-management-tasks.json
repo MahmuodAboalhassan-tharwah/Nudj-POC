@@ -1,0 +1,198 @@
+{
+    "feature": "Assessment Management",
+    "sourceRequirements": "pipeline/requirements/assessment-management-requirements.json",
+    "createdAt": "2026-02-08T20:45:00Z",
+    "totalTasks": 15,
+    "executionPlan": {
+        "phase1_foundation": {
+            "label": "Foundation — Models & Types",
+            "parallel": [
+                "TASK-101",
+                "TASK-102"
+            ]
+        },
+        "phase2_backend_services": {
+            "label": "Backend Services — Logic",
+            "parallel": [
+                "TASK-103",
+                "TASK-104",
+                "TASK-105"
+            ]
+        },
+        "phase3_backend_api": {
+            "label": "Backend API",
+            "parallel": [
+                "TASK-106"
+            ]
+        },
+        "phase4_frontend_infra": {
+            "label": "Frontend Infrastructure",
+            "parallel": [
+                "TASK-107"
+            ]
+        },
+        "phase5_frontend_components": {
+            "label": "Frontend Components",
+            "parallel": [
+                "TASK-108",
+                "TASK-109",
+                "TASK-110",
+                "TASK-111"
+            ]
+        },
+        "phase6_frontend_pages": {
+            "label": "Frontend Pages",
+            "parallel": [
+                "TASK-112",
+                "TASK-113",
+                "TASK-114"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "id": "TASK-101",
+            "title": "Create Assessment models and migration",
+            "layer": "backend-model",
+            "description": "SQLAlchemy models for Assessment, AssessmentDomain, AssessmentElementResponse, Evidence.",
+            "filesOwned": [
+                "src/backend/app/assessments/models.py",
+                "src/backend/alembic/versions/003_create_assessment_tables.py"
+            ],
+            "codingPrompt": "Create models: Assessment (id, org_id, status, score, deadline, created_by), AssessmentDomain (id, assessment_id, domain_id, weight, score, status, assignee_id), AssessmentElementResponse (id, domain_id, element_id, maturity_level, score, comment), Evidence (id, response_id, file_name, file_url, uploaded_by). Enum: AssessmentStatus (DRAFT, IN_PROGRESS, REVIEW, REVISION, COMPLETED, ARCHIVED)."
+        },
+        {
+            "id": "TASK-102",
+            "title": "Create Assessment frontend types",
+            "layer": "frontend-hook",
+            "description": "TypeScript interfaces for assessments.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/types/assessment.types.ts"
+            ],
+            "codingPrompt": "Interfaces: Assessment, AssessmentDomain, AssessmentElementResponse, Evidence. Enums: AssessmentStatus."
+        },
+        {
+            "id": "TASK-103",
+            "title": "Create Assessment Service",
+            "layer": "backend-service",
+            "description": "Business logic for creating assessments, workflow transitions, delegation.",
+            "filesOwned": [
+                "src/backend/app/assessments/service.py"
+            ],
+            "codingPrompt": "AssessmentService: create_assessment, get_assessment, update_status, assign_domain, list_assessments."
+        },
+        {
+            "id": "TASK-104",
+            "title": "Create Scoring Engine",
+            "layer": "backend-service",
+            "description": "Logic to calculate scores based on weights and formula.",
+            "filesOwned": [
+                "src/backend/app/assessments/scoring.py"
+            ],
+            "codingPrompt": "ScoringService: calculate_element_score, calculate_domain_score, calculate_overall_score. Recalculate on response save."
+        },
+        {
+            "id": "TASK-105",
+            "title": "Create Evidence Service",
+            "layer": "backend-service",
+            "description": "Handle file uploads (mock S3 for POC).",
+            "filesOwned": [
+                "src/backend/app/assessments/evidence_service.py"
+            ],
+            "codingPrompt": "EvidenceService: upload_evidence (validate, save to local/s3, create record), delete_evidence."
+        },
+        {
+            "id": "TASK-106",
+            "title": "Create Assessment API",
+            "layer": "backend-api",
+            "description": "Router and Schemas for assessments.",
+            "filesOwned": [
+                "src/backend/app/assessments/router.py",
+                "src/backend/app/assessments/schemas.py",
+                "src/backend/app/assessments/exceptions.py"
+            ],
+            "codingPrompt": "Pydantic Schemas. Router endpoints: CRUD Assessment, Submit Response, Upload Evidence, Workflow actions."
+        },
+        {
+            "id": "TASK-107",
+            "title": "Create Assessment API Hooks",
+            "layer": "frontend-hook",
+            "description": "React Query hooks.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/api/assessments.api.ts"
+            ],
+            "codingPrompt": "useAssessments, useAssessment(id), useCreateAssessment, useSubmitResponse, useUploadEvidence, useUpdateStatus."
+        },
+        {
+            "id": "TASK-108",
+            "title": "Create Assessment Card & List",
+            "layer": "frontend-component",
+            "description": "UI for listing assessments.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/assessment-list.tsx"
+            ],
+            "codingPrompt": "AssessmentList component with AssessmentCard items. Show status badge, progress, deadline."
+        },
+        {
+            "id": "TASK-109",
+            "title": "Create Domain Navigation",
+            "layer": "frontend-component",
+            "description": "Sidebar or tabs for navigating domains in an assessment.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/domain-nav.tsx"
+            ],
+            "codingPrompt": "DomainNav component. List domains with status/score. Highlight active."
+        },
+        {
+            "id": "TASK-110",
+            "title": "Create Questionnaire Components",
+            "layer": "frontend-component",
+            "description": "Maturity level selector and question item.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/question-item.tsx",
+                "src/frontend/src/features/assessments/components/maturity-selector.tsx"
+            ],
+            "codingPrompt": "QuestionItem: renders element title/desc. MaturitySelector: 1-4 radio/card selection with descriptions."
+        },
+        {
+            "id": "TASK-111",
+            "title": "Create Evidence Upload Component",
+            "layer": "frontend-component",
+            "description": "File upload UI.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/evidence-upload.tsx"
+            ],
+            "codingPrompt": "EvidenceUpload: list existing files, upload button, delete button. Progress indicator."
+        },
+        {
+            "id": "TASK-112",
+            "title": "Create Assessments Page",
+            "layer": "frontend-page",
+            "description": "Main dashboard for assessments.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/pages/assessments-page.tsx"
+            ],
+            "codingPrompt": "AssessmentsPage: fetches list, renders AssessmentList. Create button for Admin."
+        },
+        {
+            "id": "TASK-113",
+            "title": "Create Assessment Detail Page (Questionnaire)",
+            "layer": "frontend-page",
+            "description": "The main questionnaire interface.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/pages/assessment-detail-page.tsx"
+            ],
+            "codingPrompt": "AssessmentDetailPage: fetch assessment. Layout: DomainNav (left), Questionnaire (center). Handle domain switching."
+        },
+        {
+            "id": "TASK-114",
+            "title": "Create New Assessment Dialog",
+            "layer": "frontend-component",
+            "description": "Dialog to create a new project.",
+            "filesOwned": [
+                "src/frontend/src/features/assessments/components/create-assessment-dialog.tsx"
+            ],
+            "codingPrompt": "CreateAssessmentDialog: Form for org, deadline, domains."
+        }
+    ]
+}

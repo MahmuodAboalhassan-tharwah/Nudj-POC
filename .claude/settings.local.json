@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(dir \"c:\\\\Users\\\\mahmu\\\\.claude\"\" /s 2>&1 || echo \"Directory not found or inaccessible \")",
+      "Bash(dir:*)",
+      "Read(//c/Users/mahmu/**)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c dir:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(ls -la \"C:\\\\Users\\\\mahmu\\\\PycharmProjects\\\\Tharwty-projects\\\\POC\\\\pipeline\"\" 2>/dev/null || echo \"Directory does not exist \")",
+      "Bash(ls:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}

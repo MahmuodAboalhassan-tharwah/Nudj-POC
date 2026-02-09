@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Maturity Assessment Report - {{ data.organization_name_ar }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif; /* Fallback, WeasyPrint might need specific fonts */
+            direction: rtl;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .org-details {
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .score-summary {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .overall-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .domain-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .domain-header {
+            background-color: #ecf0f1;
+            padding: 10px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>تقرير تقييم النضج المؤسسي</h1>
+        <h2>{{ data.organization_name_ar }}</h2>
+        <p>تاريخ التقرير: {{ data.completed_at.strftime('%Y-%m-%d') if data.completed_at else 'N/A' }}</p>
+    </div>
+
+    <div class="org-details">
+        <h3>بيانات المنظمة</h3>
+        <p><strong>اسم المنظمة (EN):</strong> {{ data.organization_name_en }}</p>
+        <p><strong>القطاع:</strong> {{ data.sector }}</p>
+        <p><strong>الحجم:</strong> {{ data.size }}</p>
+        <p><strong>المنطقة:</strong> {{ data.region }}</p>
+    </div>
+
+    <div class="score-summary">
+        <div class="overall-score">
+            <p>النتيجة الإجمالية</p>
+            <span>{{ "%.1f"|format(data.overall_score) }}%</span>
+        </div>
+        <!-- Add visuals here if possible -->
+    </div>
+
+    <div class="domains">
+        <h3>تفاصيل المجالات</h3>
+        {% for domain in data.domains %}
+        <div class="domain-section">
+            <div class="domain-header">
+                <span>{{ domain.name }} ({{ domain.score }}%)</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>العنصر</th>
+                        <th>مستوى النضج</th>
+                        <th>الدرجة</th>
+                        <th>الملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for element in domain.elements %}
+                    <tr>
+                        <td>{{ element.name }}</td>
+                        <td>{{ element.maturity_level }}</td>
+                        <td>{{ element.score }}%</td>
+                        <td>{{ element.comment or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer" style="margin-top: 50px; text-align: center; font-size: 12px; color: #777;">
+        <p>تم إنشاء هذا التقرير بواسطة منصة نُضج - ثروة القابضة</p>
+    </div>
+</body>
+</html>

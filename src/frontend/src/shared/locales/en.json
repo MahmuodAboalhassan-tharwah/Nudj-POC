@@ -1,0 +1,188 @@
+{
+    "common": {
+        "email": "Email",
+        "password": "Password",
+        "name": "Name",
+        "role": "Role",
+        "status": "Status",
+        "actions": "Actions",
+        "save": "Save",
+        "cancel": "Cancel",
+        "send": "Send",
+        "search": "Search...",
+        "export": "Export",
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "auditLogs": "Audit Logs",
+        "organizations": "Organizations",
+        "logout": "Logout",
+        "overallScore": "Overall Score",
+        "deadline": "Deadline",
+        "created": "Created",
+        "loading": "Loading...",
+        "error": "Error"
+    },
+    "auth": {
+        "login": {
+            "title": "Welcome Back",
+            "subtitle": "Sign in to access your dashboard",
+            "submit": "Sign In",
+            "email": "Email",
+            "password": "Password"
+        },
+        "register": {
+            "title": "Create Account",
+            "submit": "Register"
+        }
+    },
+    "assessments": {
+        "title": "Assessments",
+        "details": "Assessment Details",
+        "new": "New Assessment",
+        "create": "Create Assessment",
+        "domains": "Domains",
+        "score": "Score",
+        "findings": "Findings & Evidence",
+        "discussion": "Discussion",
+        "delegate": "Delegate Tasks",
+        "assignedTo": "Assigned to",
+        "noDelegations": "No active delegations yet.",
+        "errorLoading": "Failed to load assessment details.",
+        "element": "Element",
+        "frameworkElement": "Framework Element",
+        "maturityLevel": "Maturity Level",
+        "evidenceDocumentation": "Evidence & Documentation",
+        "analysisObservations": "Analysis & Observations",
+        "saveResponse": "Save Response",
+        "saving": "Saving...",
+        "teamDiscussion": "Team Discussion",
+        "collaborateOnFindings": "Collaborate on findings",
+        "placeholderAnalysis": "Provide context for the selected maturity level...",
+        "saveFirstToDiscuss": "Please save your response first to start a discussion.",
+        "uploading": "Uploading...",
+        "uploadEvidence": "Upload Evidence",
+        "status": {
+            "DRAFT": "Draft",
+            "IN_PROGRESS": "In Progress",
+            "UNDER_REVIEW": "Under Review",
+            "REVISION_REQUESTED": "Revision Requested",
+            "COMPLETED": "Completed",
+            "ARCHIVED": "Archived"
+        },
+        "domainNames": {
+            "1": "HR Strategy",
+            "2": "Workforce Planning",
+            "3": "Talent Acquisition",
+            "4": "Performance Management",
+            "5": "Learning & Development",
+            "6": "Total Rewards",
+            "7": "Employee Relations",
+            "8": "HR Technology",
+            "9": "HR Analytics"
+        },
+        "maturityLevels": {
+            "levelPrefix": "Level",
+            "1": {
+                "label": "Ad-hoc",
+                "description": "Unstructured, reactive"
+            },
+            "2": {
+                "label": "Defined",
+                "description": "Documented processes"
+            },
+            "3": {
+                "label": "Managed",
+                "description": "Measured and controlled"
+            },
+            "4": {
+                "label": "Optimized",
+                "description": "Continuous improvement"
+            }
+        },
+        "domainDescription": "Tracks progress for this specific assessment domain.",
+        "selectDomain": "Please select a domain from the sidebar to view elements.",
+        "list": {
+            "title": "Assessments",
+            "noAssessments": "No assessments found.",
+            "createOne": "Create one?",
+            "score": "Score",
+            "deadline": "Deadline",
+            "viewDetails": "View Details",
+            "created": "Created",
+            "failed": "Failed to load assessments"
+        },
+        "delegation": {
+            "title": "Assessment Delegation",
+            "description": "Assign specific domains or the whole assessment to team members.",
+            "teamMember": "Team Member",
+            "selectUser": "Select user",
+            "scope": "Scope",
+            "selectScope": "Select scope",
+            "wholeAssessment": "Whole Assessment",
+            "domainPrefix": "Domain",
+            "notes": "Instruction Notes (Optional)",
+            "notesPlaceholder": "Provide context or instructions for this team member...",
+            "assignTask": "Assign Task",
+            "delegating": "Delegating...",
+            "currentAssignments": "Current Assignments",
+            "noDelegations": "No active delegations yet.",
+            "success": "Task delegated successfully",
+            "error": "Failed to delegate task",
+            "revokeSuccess": "Delegation revoked",
+            "revokeError": "Failed to revoke delegation",
+            "assignedOn": "Assigned on",
+            "user": "User",
+            "assessment": "Assessment",
+            "validation": {
+                "selectUser": "Please select a user",
+                "notesTooLong": "Notes too long"
+            }
+        },
+        "createDialog": {
+            "title": "Create New Assessment",
+            "description": "Start a new maturity assessment for your organization.",
+            "deadline": "Deadline (Optional)",
+            "pickDate": "Pick a date",
+            "creating": "Creating...",
+            "submit": "Create Assessment"
+        }
+    },
+    "comments": {
+        "placeholder": "Add to the discussion...",
+        "submit": "Comment",
+        "noComments": "No comments yet",
+        "beFirst": "Be the first to share your observations.",
+        "reply": "Reply",
+        "writePlaceholder": "Write a comment...",
+        "post": "Post",
+        "replyTo": "Reply to",
+        "replies": "replies",
+        "replySingular": "reply"
+    },
+    "reports": {
+        "download": "Download Report",
+        "generating": "Generating...",
+        "error": "Failed to download report"
+    },
+    "admin": {
+        "users": {
+            "title": "User Management",
+            "invite": "Invite User"
+        },
+        "organizations": {
+            "title": "Organization Management",
+            "new": "New Organization"
+        },
+        "framework": {
+            "title": "Framework Configuration",
+            "description": "Manage the weights and settings for each assessment domain.",
+            "domainsTitle": "Assessment Domains",
+            "domainsDescription": "Adjust the default weight for each domain. Weights affect the overall maturity score calculation.",
+            "domainId": "ID",
+            "domainName": "Domain Name",
+            "weight": "Weight",
+            "successUpdate": "Domain weight updated successfully",
+            "errorUpdate": "Failed to update domain weight"
+        }
+    }
+}

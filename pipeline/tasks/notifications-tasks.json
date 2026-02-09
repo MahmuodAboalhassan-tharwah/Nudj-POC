@@ -1,0 +1,68 @@
+{
+    "feature": "Notifications",
+    "sourceRequirements": "pipeline/requirements/notifications-requirements.json",
+    "createdAt": "2026-02-08T22:00:00Z",
+    "totalTasks": 4,
+    "executionPlan": {
+        "phase1_backend": {
+            "label": "Backend Implementation",
+            "parallel": [
+                "TASK-601",
+                "TASK-602",
+                "TASK-603"
+            ]
+        },
+        "phase2_frontend": {
+            "label": "Frontend Integration",
+            "parallel": [
+                "TASK-604"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "id": "TASK-601",
+            "title": "Backend: Notification Models & Core Service",
+            "layer": "backend-service",
+            "description": "Create database models for notifications and the core service to manage them.",
+            "filesOwned": [
+                "src/backend/app/notifications/models.py",
+                "src/backend/app/notifications/service.py",
+                "src/backend/app/notifications/schemas.py"
+            ],
+            "codingPrompt": "Create `Notification` model (user_id, title, message, is_read, type). Implement `NotificationService` with formatting create/get/mark_read methods."
+        },
+        {
+            "id": "TASK-602",
+            "title": "Backend: Email Integration",
+            "layer": "backend-logic",
+            "description": "Implement email sending logic using SMTP or Mock for dev environment.",
+            "filesOwned": [
+                "src/backend/app/notifications/email_service.py",
+                "src/backend/app/notifications/templates/base.html"
+            ],
+            "codingPrompt": "Create `EmailService`. Implement `send_email` using `fastapi-mail` or standard `smtplib`. Create a base HTML template for emails."
+        },
+        {
+            "id": "TASK-603",
+            "title": "Backend: Notification API Endpoint",
+            "layer": "backend-api",
+            "description": "Expose notifications via API.",
+            "filesOwned": [
+                "src/backend/app/notifications/router.py"
+            ],
+            "codingPrompt": "Create router with `GET /notifications` (paginated) and `PATCH /notifications/{id}/read`."
+        },
+        {
+            "id": "TASK-604",
+            "title": "Frontend: Notification Center UI",
+            "layer": "frontend-component",
+            "description": "Detailed UI for viewing and managing notifications.",
+            "filesOwned": [
+                "src/frontend/src/features/notifications/components/notification-center.tsx",
+                "src/frontend/src/features/notifications/api/notifications.api.ts"
+            ],
+            "codingPrompt": "Create `NotificationCenter` component using a Popover. Display unread count badge. List notifications with read/unread status. Implement `markAsRead` mutation."
+        }
+    ]
+}

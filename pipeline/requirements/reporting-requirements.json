@@ -1,0 +1,37 @@
+{
+    "feature": "Reporting",
+    "description": "Generate Maturity Assessment Reports in PDF format.",
+    "functionalRequirements": [
+        {
+            "id": "RPT-001",
+            "description": "Generate a PDF report for a submitted/completed assessment.",
+            "acceptanceCriteria": [
+                "Include Organization details (Name, CR, Sector, Size)",
+                "Include Assessment Overall Score and Maturity Level",
+                "Include breakdown by Domain (Score, Level)",
+                "Include detailed element scores and comments",
+                "Visual charts (Radar/Bar) if possible",
+                "Professional formatting with Nudj branding"
+            ]
+        },
+        {
+            "id": "RPT-002",
+            "description": "Allow Client Admins and Super Admins to download the report.",
+            "acceptanceCriteria": [
+                "Secure endpoint (RBAC)",
+                "Download as PDF file"
+            ]
+        }
+    ],
+    "componentMappings": {
+        "backend": [
+            "src/backend/app/reports/router.py",
+            "src/backend/app/reports/service.py",
+            "src/backend/app/reports/templates"
+        ],
+        "frontend": [
+            "src/frontend/src/features/assessments/pages/assessment-detail-page.tsx",
+            "src/frontend/src/features/assessments/components/download-report-button.tsx"
+        ]
+    }
+}
