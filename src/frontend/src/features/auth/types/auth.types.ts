@@ -14,7 +14,16 @@
 // Enums
 // =============================================================================
 
-export type Role = 'super_admin' | 'analyst' | 'client_admin' | 'assessor';
+/**
+ * User roles enum - matches backend Role enum.
+ * Can be used as both enum (Role.SUPER_ADMIN) and type (role: Role).
+ */
+export enum Role {
+  SUPER_ADMIN = 'super_admin',
+  ANALYST = 'analyst',
+  CLIENT_ADMIN = 'client_admin',
+  ASSESSOR = 'assessor',
+}
 
 export type SSOProvider = 'azure_ad' | 'google';
 

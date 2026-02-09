@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)"
+      "Bash(PYTHONPATH=\"c:/Work/PoCs/Nudj-POC\" py src/backend/seed.py)",
+      "Bash(PYTHONPATH=\"c:/Work/PoCs/Nudj-POC\" py src/backend/seed_admin.py)",
+      "Bash(PYTHONPATH=\"c:/Work/PoCs/Nudj-POC\" py create_admin_user.py)",
+      "Bash(PYTHONPATH=\"c:/Work/PoCs/Nudj-POC\" py -c \"\nimport asyncio\nfrom sqlalchemy import text\nfrom src.backend.database import get_engine\n\nasync def check_enum():\n    engine = get_engine()\n    async with engine.begin() as conn:\n        result = await conn.execute(text(\"\"SELECT unnest(enum_range(NULL::role)) AS role_value\"\"))\n        print(''Role enum values in database:'')\n        for row in result:\n            print(f''  - {row[0]}'')\n\nasyncio.run(check_enum())\n\")"
     ],
     "deny": [],
     "ask": []
