@@ -1,35 +1,71 @@
-# Backend Dependencies
-# Auth System - FastAPI + SQLAlchemy 2.0 Async
-
-# Core
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-
-# Database
-sqlalchemy>=2.0.25
-asyncpg>=0.29.0
-alembic>=1.13.0
-
-# Authentication
-python-jose[cryptography]>=3.3.0
-argon2-cffi>=23.1.0
-pyotp>=2.9.0  # TOTP for MFA
-
-# Utilities
-python-multipart>=0.0.6
-httpx>=0.26.0
-redis>=5.0.0
-aioredis>=2.0.1
-fastapi-mail>=1.4.1
-
-# Reporting
-jinja2>=3.1.0
-weasyprint>=60.0
-
-# Development
-pytest>=7.4.0
-pytest-asyncio>=0.23.0
-pytest-cov>=4.1.0
-httpx>=0.26.0  # For TestClient
+aioredis==2.0.1
+aiosmtplib==5.1.0
+alembic==1.18.3
+annotated-doc==0.0.4
+annotated-types==0.7.0
+anyio==4.12.1
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
+async-timeout==5.0.1
+asyncpg==0.31.0
+blinker==1.9.0
+brotli==1.2.0
+certifi==2026.1.4
+cffi==2.0.0
+click==8.3.1
+colorama==0.4.6
+coverage==7.13.4
+cryptography==46.0.4
+cssselect2==0.8.0
+dnspython==2.8.0
+ecdsa==0.19.1
+email-validator==2.3.0
+fastapi==0.128.5
+fastapi-mail==1.6.1
+fonttools==4.61.1
+greenlet==3.3.1
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.7.1
+httpx==0.28.1
+idna==3.11
+iniconfig==2.3.0
+Jinja2==3.1.6
+Mako==1.3.10
+MarkupSafe==3.0.3
+packaging==26.0
+pillow==12.1.0
+pluggy==1.6.0
+pyasn1==0.6.2
+pycparser==3.0
+pydantic==2.12.5
+pydantic-settings==2.12.0
+pydantic_core==2.41.5
+pydyf==0.12.1
+Pygments==2.19.2
+PyJWT==2.11.0
+pyotp==2.9.0
+pyphen==0.17.2
+pytest==9.0.2
+pytest-asyncio==1.3.0
+pytest-cov==7.0.0
+python-dotenv==1.2.1
+python-jose==3.5.0
+python-multipart==0.0.22
+PyYAML==6.0.3
+redis==7.1.0
+regex==2025.11.3
+rsa==4.9.1
+six==1.17.0
+SQLAlchemy==2.0.46
+starlette==0.52.1
+tinycss2==1.5.1
+tinyhtml5==2.0.0
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+uvicorn==0.40.0
+watchfiles==1.1.1
+weasyprint==68.1
+webencodings==0.5.1
+websockets==16.0
+zopfli==0.4.0
