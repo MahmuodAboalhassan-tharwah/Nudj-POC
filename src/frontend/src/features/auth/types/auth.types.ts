@@ -10,20 +10,13 @@
  * - MFA types
  */
 
+// Import and re-export Role enum from role.enum.ts to avoid duplication
+import { Role } from './role.enum';
+export { Role };
+
 // =============================================================================
 // Enums
 // =============================================================================
-
-/**
- * User roles enum - matches backend Role enum.
- * Can be used as both enum (Role.SUPER_ADMIN) and type (role: Role).
- */
-export enum Role {
-  SUPER_ADMIN = 'super_admin',
-  ANALYST = 'analyst',
-  CLIENT_ADMIN = 'client_admin',
-  ASSESSOR = 'assessor',
-}
 
 export type SSOProvider = 'azure_ad' | 'google';
 

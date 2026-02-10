@@ -52,19 +52,19 @@ async def get_current_user(
     """
     if not credentials:
         raise InvalidCredentialsException()
-    
+
     token = credentials.credentials
-    
+
     # Validate token
-    is_valid, payload, error = jwt_service.validate_access_token(token)
-    
-    if not is_valid or payload is None:
-        if error == "expired":
+    try:
+        payload = jwt_service.verify_access_token(token)
+    except Exception as e:
+        if "expired" in str(e).lower():
             raise TokenExpiredException()
         raise InvalidCredentialsException()
-    
+
     # Get user from database
-    user_id = payload.get("sub")
+    user_id = payload.sub
     if not user_id:
         raise InvalidCredentialsException()
     

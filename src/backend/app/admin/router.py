@@ -273,9 +273,10 @@ async def update_user(
     
     if request.is_active is not None:
         target_user.is_active = request.is_active
-    
+
     await session.flush()
-    
+    await session.commit()  # Commit changes to database
+
     return UserDetailResponse(
         id=target_user.id,
         email=target_user.email,
@@ -315,9 +316,10 @@ async def deactivate_user(
     
     if not target_user:
         raise NotFoundException()
-    
+
     target_user.is_active = False
-    
+    await session.commit()  # Commit changes to database
+
     return SuccessResponse(
         message_en="User deactivated successfully",
         message_ar="تم تعطيل المستخدم بنجاح",
@@ -344,25 +346,30 @@ async def list_audit_logs(
     Requires: audit:read permission
     """
     audit_service = AuditService(session)
-    
-    # Apply filters
-    filters = {}
+
+    # Build filter parameters (query_logs expects individual kwargs, not a dict)
+    filter_kwargs = {
+        "page": page,
+        "page_size": page_size,
+    }
+
     if event_type:
-        filters["event_type"] = event_type
+        try:
+            from src.backend.app.common.models import AuditEventType
+            filter_kwargs["event_type"] = AuditEventType(event_type)
+        except ValueError:
+            pass  # Invalid event type, ignore filter
+
     if user_id:
-        filters["user_id"] = user_id
-    
+        filter_kwargs["user_id"] = user_id
+
     # Tenant isolation for non-super admins
     if user.role != Role.SUPER_ADMIN:
-        filters["organization_id"] = user.organization_id
+        filter_kwargs["organization_id"] = user.organization_id
     elif organization_id:
-        filters["organization_id"] = organization_id
-    
-    logs, total = await audit_service.query_logs(
-        filters=filters,
-        page=page,
-        page_size=page_size,
-    )
+        filter_kwargs["organization_id"] = organization_id
+
+    logs, total = await audit_service.query_logs(**filter_kwargs)
     
     return AuditLogListResponse(
         items=[

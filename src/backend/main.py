@@ -86,7 +86,9 @@ app.add_middleware(
 # Custom middleware
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
+# Disable rate limiting in development to avoid blocking CORS preflight requests
+if not settings.DEBUG:
+    app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
 
 # Register exception handlers
 register_exception_handlers(app)

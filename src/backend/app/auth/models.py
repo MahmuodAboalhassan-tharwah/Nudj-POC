@@ -211,6 +211,16 @@ class Invitation(TimestampMixin, Base):
         nullable=True,
     )
 
+    @property
+    def is_expired(self) -> bool:
+        """Check if invitation has expired."""
+        return datetime.utcnow() > self.expires_at
+
+    @property
+    def is_used(self) -> bool:
+        """Check if invitation has been used."""
+        return self.used_at is not None
+
     def __repr__(self) -> str:
         return f"<Invitation {self.email} ({self.role.value})>"
 

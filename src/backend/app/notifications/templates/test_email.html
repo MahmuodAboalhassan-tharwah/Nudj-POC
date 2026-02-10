@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Email - Nudj Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4F46E5;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #4F46E5;
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .content h2 {
+            color: #1F2937;
+            margin-top: 0;
+        }
+        .info-box {
+            background: #F3F4F6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4F46E5;
+        }
+        .success-badge {
+            display: inline-block;
+            background: #10B981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            text-align: center;
+            color: #6B7280;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #4F46E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4F46E5;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6B7280;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Nudj Platform</h1>
+            <p style="margin: 10px 0 0 0; color: #6B7280;">HR Maturity Assessment System</p>
+        </div>
+
+        <div class="content">
+            <p><span class="success-badge">✅ Email Service Test</span></p>
+
+            <h2>Email Configuration Successful!</h2>
+
+            <p>Hello <strong>{{ recipient_name }}</strong>,</p>
+
+            <p>This is a test email from the Nudj Platform to verify that the email service is configured correctly and working as expected.</p>
+
+            <div class="info-box">
+                <h3 style="margin-top: 0;">✅ Email Service Details</h3>
+                <ul style="margin: 10px 0;">
+                    <li><strong>Provider:</strong> Office365 SMTP</li>
+                    <li><strong>Server:</strong> smtp.office365.com:587</li>
+                    <li><strong>Security:</strong> TLS Enabled</li>
+                    <li><strong>From:</strong> noreply@thrwty.com</li>
+                    <li><strong>Status:</strong> Operational ✅</li>
+                </ul>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">Test Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Organizations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Notifications</div>
+                </div>
+            </div>
+
+            <h3>📧 Configured Email Features</h3>
+            <ul>
+                <li>✅ Welcome emails on registration</li>
+                <li>✅ Password reset emails</li>
+                <li>✅ Invitation emails</li>
+                <li>✅ Assessment delegation notifications</li>
+                <li>✅ Assessment completion alerts</li>
+                <li>✅ Report ready notifications</li>
+            </ul>
+
+            <div style="text-align: center;">
+                <a href="http://localhost:5175/login" class="button">🚀 Go to Platform</a>
+            </div>
+
+            <p style="margin-top: 30px; color: #6B7280; font-size: 14px;">
+                <strong>Sent at:</strong> {{ sent_at }}<br>
+                <strong>Environment:</strong> Development<br>
+                <strong>Test ID:</strong> {{ test_id }}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>Nudj Platform</strong> - HR Maturity Assessment</p>
+            <p>This is an automated test email from the development environment.</p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                If you received this email unexpectedly, you can safely ignore it.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

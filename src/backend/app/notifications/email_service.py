@@ -14,25 +14,49 @@ class EmailService:
     def __init__(self):
         self.template_dir = Path(__file__).parent / "templates"
         self.jinja_env = Environment(loader=FileSystemLoader(self.template_dir))
-        
-        # Configure fastapi-mail (only if not in simple mock mode)
-        # For simplicity in this POC, we'll focus on a robust "Mock" vs "SMTP" switch
-        self.mock_mode = settings.ENVIRONMENT == "development" and not settings.SENDGRID_API_KEY
-        
+
+        # Determine if we should use mock mode
+        # Mock mode if: development + no email credentials configured
+        has_sendgrid = bool(settings.SENDGRID_API_KEY)
+        has_smtp = bool(settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD)
+        self.mock_mode = settings.ENVIRONMENT == "development" and not (has_sendgrid or has_smtp)
+
         if not self.mock_mode:
-             self.conf = ConnectionConfig(
-                MAIL_USERNAME=settings.SENDGRID_API_KEY or "apikey", # SendGrid uses generic username
-                MAIL_PASSWORD=settings.SENDGRID_API_KEY,
-                MAIL_FROM=settings.EMAIL_FROM_ADDRESS,
-                MAIL_PORT=587,
-                MAIL_SERVER="smtp.sendgrid.net",
-                MAIL_STARTTLS=True,
-                MAIL_SSL_TLS=False,
-                USE_CREDENTIALS=True,
-                VALIDATE_CERTS=True,
-                TEMPLATE_FOLDER=self.template_dir
-            )
-             self.fastmail = FastMail(self.conf)
+            # Configure based on EMAIL_PROVIDER setting
+            if settings.EMAIL_PROVIDER == "smtp":
+                # SMTP configuration (Office365, Gmail, etc.)
+                logger.info(f"Configuring SMTP email: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+                self.conf = ConnectionConfig(
+                    MAIL_USERNAME=settings.EMAIL_HOST_USER,
+                    MAIL_PASSWORD=settings.EMAIL_HOST_PASSWORD,
+                    MAIL_FROM=settings.EMAIL_FROM_ADDRESS,
+                    MAIL_FROM_NAME=settings.EMAIL_FROM_NAME,
+                    MAIL_PORT=settings.EMAIL_PORT,
+                    MAIL_SERVER=settings.EMAIL_HOST,
+                    MAIL_STARTTLS=settings.EMAIL_USE_TLS,
+                    MAIL_SSL_TLS=False,
+                    USE_CREDENTIALS=True,
+                    VALIDATE_CERTS=True,
+                    TEMPLATE_FOLDER=self.template_dir
+                )
+            else:
+                # SendGrid configuration
+                logger.info("Configuring SendGrid email")
+                self.conf = ConnectionConfig(
+                    MAIL_USERNAME="apikey",  # SendGrid uses generic username
+                    MAIL_PASSWORD=settings.SENDGRID_API_KEY,
+                    MAIL_FROM=settings.EMAIL_FROM_ADDRESS,
+                    MAIL_FROM_NAME=settings.EMAIL_FROM_NAME,
+                    MAIL_PORT=587,
+                    MAIL_SERVER="smtp.sendgrid.net",
+                    MAIL_STARTTLS=True,
+                    MAIL_SSL_TLS=False,
+                    USE_CREDENTIALS=True,
+                    VALIDATE_CERTS=True,
+                    TEMPLATE_FOLDER=self.template_dir
+                )
+            self.fastmail = FastMail(self.conf)
+            logger.info(f"✅ Email service configured: {settings.EMAIL_PROVIDER}")
 
     async def send_email(
         self, 

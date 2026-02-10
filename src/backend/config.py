@@ -85,10 +85,17 @@ class Settings(BaseSettings):
     # ==========================================================================
     # Email Service
     # ==========================================================================
-    EMAIL_PROVIDER: str = "sendgrid"  # sendgrid, ses
+    EMAIL_PROVIDER: str = "sendgrid"  # smtp, sendgrid, ses
     SENDGRID_API_KEY: Optional[str] = None
     EMAIL_FROM_ADDRESS: str = "noreply@nudj.sa"
     EMAIL_FROM_NAME: str = "Nudj HR Platform"
+
+    # SMTP Configuration (for Office365, Gmail, etc.)
+    EMAIL_HOST: str = "smtp.office365.com"
+    EMAIL_PORT: int = 587
+    EMAIL_USE_TLS: bool = True
+    EMAIL_HOST_USER: Optional[str] = None
+    EMAIL_HOST_PASSWORD: Optional[str] = None
 
     # ==========================================================================
     # SMS Service (Saudi OTP)
@@ -111,6 +118,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
         "https://nudj.sa",
     ]
     CORS_ALLOW_CREDENTIALS: bool = True
